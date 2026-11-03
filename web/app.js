@@ -325,9 +325,9 @@ async function showWrap() {
 
 // ---------- routing and keys ----------
 async function route() {
-  onKey = null; onKeyUp = null; $("#pop").hidden = true;
   const [r, id] = location.hash.slice(1).split("/");
-  if (r === "block" && block) return;
+  if (r === "block" && block) return;  // startBlock already rendered the step
+  onKey = null; onKeyUp = null; $("#pop").hidden = true;
   if (r === "read" && id) { block = null; renderSteps(); return showReader(await api(`/api/item/${id}`).catch(fail), false); }
   if (r === "speak" && id) { block = null; renderSteps(); return showSpeak(await api(`/api/item/${id}`).catch(fail), false); }
   showHome();

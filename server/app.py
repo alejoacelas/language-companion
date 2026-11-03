@@ -19,6 +19,15 @@ from . import coach, content, db, progress, srs  # noqa: E402
 
 app = FastAPI(title="language-companion")
 
+
+@app.middleware("http")
+async def no_stale_frontend(request, call_next):
+    # The front end has no build step, so make the browser revalidate it on every load.
+    resp = await call_next(request)
+    if not request.url.path.startswith(("/api", "/media")):
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
 REALTIME_MODEL = "gpt-realtime-2.1"
 REALTIME_VOICE = "marin"
 
