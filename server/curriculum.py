@@ -232,7 +232,7 @@ Return JSON: {{"title": short English title, "summary": one sentence of what hap
 "pace_reason": one sentence on why this many new words,
 "new_words": [{{"id": ladder id, "de": one form to learn, written as it should appear on a flashcard (the ladder form, or a more useful short chunk containing it; no slashes or alternatives), "en": English}}],
 "lines": [{{"speaker": name or "Narrator", "lang": "en" | "de", "text": str, "en": English translation (de lines only)}}],
-"questions": [{{"q": str, "options": [3 short options], "answer": index of the right option}}]}}"""
+"questions": [{{"q": str, "options": [3 short options], "answer": index of the right option, "line": 1-based number of the line that answers it}}]}}"""
 
 
 def _unknown(item: dict, allowed: set[str], names: set[str]) -> list[str]:
@@ -268,7 +268,8 @@ def generate(n: int) -> dict:
         "summary": out.get("summary"),
         "source": {"name": "Written by Claude", "url": None, "note": "Generated for personal study"},
         "media": None, "external_link": None,
-        "lesson": {"n": n, "new_words": new, "questions": out.get("questions", []),
+        "lesson": {"n": n, "new_words": new,
+                   "questions": [{**q, "line": f"l{q['line']}"} if isinstance(q.get("line"), int) else q for q in out.get("questions", [])],
                    "pace_reason": out.get("pace_reason"), "unknown_words": unknown, "stats_at_writing": stats},
         "lines": [{"id": f"l{i + 1}", **{k: v for k, v in l.items() if k in ("speaker", "lang", "text", "en")}}
                   for i, l in enumerate(out["lines"])],

@@ -26,7 +26,7 @@ def add(front: str, back: str, context_de=None, context_en=None, item_id=None, l
 
 
 def due(limit: int = 20) -> list[dict]:
-    return db.rows("SELECT * FROM cards WHERE due <= ? ORDER BY due LIMIT ?",
+    return db.rows("SELECT * FROM cards WHERE due <= ? AND NOT suspended ORDER BY due LIMIT ?",
                    datetime.now(timezone.utc).isoformat(), limit)
 
 
@@ -41,10 +41,27 @@ def review(card_id: int, rating: int, block_id: int | None = None) -> dict:
 
 def stats() -> dict:
     total = db.one("SELECT COUNT(*) n FROM cards")["n"]
-    due_now = db.one("SELECT COUNT(*) n FROM cards WHERE due <= ?", datetime.now(timezone.utc).isoformat())["n"]
+    due_now = db.one("SELECT COUNT(*) n FROM cards WHERE due <= ? AND NOT suspended", datetime.now(timezone.utc).isoformat())["n"]
     # A card counts as learned once FSRS has scheduled it at least 7 days out.
     learned = 0
     for r in db.rows("SELECT fsrs FROM cards"):
         if (json.loads(r["fsrs"]).get("stability") or 0) >= 7:
             learned += 1
     return {"cards": total, "due": due_now, "learned": learned}
+
+
+EDITABLE = ("front", "back", "context_de", "context_en")
+
+
+def edit(card_id: int, **fields) -> dict:
+    sets = {k: v for k, v in fields.items() if k in EDITABLE and v is not None}
+    if sets:
+        db.run(f"UPDATE cards SET {', '.join(k + '=?' for k in sets)} WHERE id=?", *sets.values(), card_id)
+        db.log("card_edited", None, **sets)
+    return db.one("SELECT * FROM cards WHERE id=?", card_id)
+
+
+def suspend(card_id: int, suspended: bool = True) -> dict:
+    db.run("UPDATE cards SET suspended=? WHERE id=?", int(suspended), card_id)
+    db.log("card_suspended" if suspended else "card_unsuspended", None, card_id=card_id)
+    return db.one("SELECT * FROM cards WHERE id=?", card_id)

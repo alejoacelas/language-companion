@@ -194,6 +194,34 @@ def add_card(c: NewCard):
     return srs.add(**c.model_dump())
 
 
+class CardEdit(BaseModel):
+    front: str | None = None
+    back: str | None = None
+    context_de: str | None = None
+    context_en: str | None = None
+
+
+@app.patch("/api/cards/{card_id}")
+def edit_card(card_id: int, c: CardEdit):
+    return srs.edit(card_id, **c.model_dump())
+
+
+class Suspend(BaseModel):
+    suspended: bool = True
+
+
+@app.post("/api/cards/{card_id}/suspend")
+def suspend_card(card_id: int, s: Suspend):
+    return srs.suspend(card_id, s.suspended)
+
+
+@app.get("/api/words")
+def words():
+    """Every word met in lessons, newest first."""
+    return [{k: w[k] for k in ("id", "de", "en", "lesson", "known", "met_at", "good_reviews", "seen", "clicks")}
+            for w in reversed(curriculum.word_states())]
+
+
 @app.get("/api/cards/due")
 def cards_due(limit: int = 20):
     return srs.due(limit)
@@ -212,9 +240,9 @@ def review(card_id: int, r: Review):
 # ---------- speech ----------
 
 @app.get("/api/tts")
-def tts(text: str, lang: str = "de", voice: str | None = None):
+def tts(text: str, lang: str = "de", voice: str | None = None, speed: float = 1.0):
     from .speech import tts as tts_mod
-    path = tts_mod.speak(text, lang=lang, voice=voice)
+    path = tts_mod.speak(text, lang=lang, voice=voice, speed=max(0.5, min(1.5, speed)))
     return FileResponse(path)
 
 
@@ -228,7 +256,11 @@ async def pronounce(audio: UploadFile = File(...), text_de: str = Form(""), item
     """
     from .speech import phonemes
     data = await audio.read()
-    rec = phonemes.recognize(data, audio.content_type or "audio/webm")
+    try:
+        rec = phonemes.recognize(data, audio.content_type or "audio/webm")
+    except Exception as e:  # empty or undecodable recordings
+        return {"text": text_de, "words": [], "score": None, "error": f"Could not hear a recording: {e}"[:200],
+                "for_coach": "The recording was empty or could not be decoded; rely on the audio."}
     if not text_de.strip():
         heard = {k: "".join(v) for k, v in rec["phones"].items()}
         return {"text": "", "heard_ipa": heard, "words": [], "score": None,

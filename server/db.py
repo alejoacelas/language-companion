@@ -3,6 +3,7 @@
 import json
 import os
 import sqlite3
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS cards (
   created_at TEXT NOT NULL,
   due TEXT NOT NULL,
   fsrs TEXT NOT NULL,             -- serialized fsrs.Card
+  suspended INTEGER DEFAULT 0,    -- 1: never shown for review
   UNIQUE(front)
 );
 CREATE TABLE IF NOT EXISTS reviews (
@@ -56,25 +58,31 @@ def connect() -> sqlite3.Connection:
     con = sqlite3.connect(DB_PATH, check_same_thread=False)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    if "suspended" not in {r[1] for r in con.execute("PRAGMA table_info(cards)")}:
+        con.execute("ALTER TABLE cards ADD COLUMN suspended INTEGER DEFAULT 0")
     return con
 
 
 con = connect()
+_lock = threading.RLock()  # FastAPI runs handlers on several threads; they share this one connection
 
 
 def rows(sql: str, *args) -> list[dict]:
-    return [dict(r) for r in con.execute(sql, args).fetchall()]
+    with _lock:
+        return [dict(r) for r in con.execute(sql, args).fetchall()]
 
 
 def one(sql: str, *args) -> dict | None:
-    r = con.execute(sql, args).fetchone()
+    with _lock:
+        r = con.execute(sql, args).fetchone()
     return dict(r) if r else None
 
 
 def run(sql: str, *args) -> int:
-    cur = con.execute(sql, args)
-    con.commit()
-    return cur.lastrowid
+    with _lock:
+        cur = con.execute(sql, args)
+        con.commit()
+        return cur.lastrowid
 
 
 def log(type_: str, item_id: str | None = None, block_id: int | None = None, **payload) -> None:
