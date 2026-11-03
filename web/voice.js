@@ -10,7 +10,8 @@ export class VoiceCoach {
 
   get live() { return this.dc?.readyState === "open"; }
 
-  async start(itemId) {
+  // `opening` is the app's first message to the coach; by default the coach greets and picks the first sentence.
+  async start(itemId, opening = "(The learner just opened the speaking practice. Greet them in one short sentence and show the first thing to say.)") {
     if (this.active) return;
     this.active = true; this.onState("connecting");
     try {
@@ -28,7 +29,7 @@ export class VoiceCoach {
       dc.onopen = () => {
         this.onState("live");
         // Let the coach open the session.
-        this.say("(The learner just opened the speaking practice. Greet them in one short sentence and show the first thing to say.)");
+        this.say(opening);
       };
       pc.onconnectionstatechange = () => { if (["failed", "closed", "disconnected"].includes(pc.connectionState) && this.active) this.stop(); };
       const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
@@ -56,12 +57,13 @@ export class VoiceCoach {
   handle(ev) {
     if (ev.type === "response.output_audio_transcript.done") this.onTranscript("Coach", ev.transcript);
     else if (ev.type === "conversation.item.input_audio_transcription.completed") this.onTranscript("You", ev.transcript);
-    else if (ev.type === "response.created") this.onState("speaking");
+    else if (ev.type === "response.created") { this.responding = true; this.onState("speaking"); }
     else if (ev.type === "response.function_call_arguments.done") {
       let args = {}; try { args = JSON.parse(ev.arguments || "{}"); } catch {}
       const output = this.onTool?.(ev.name, args) ?? { ok: true };
       this.pendingCalls.push({ call_id: ev.call_id, output });
     } else if (ev.type === "response.done") {
+      this.responding = false;
       if (this.pendingCalls.length) {
         for (const c of this.pendingCalls.splice(0))
           this.send({ type: "conversation.item.create", item: { type: "function_call_output", call_id: c.call_id, output: JSON.stringify(c.output) } });
@@ -73,7 +75,8 @@ export class VoiceCoach {
   // Hold to talk: interrupt the coach, stream the mic, then (on release) commit the audio.
   talkStart() {
     if (!this.track || !this.live) return false;
-    this.send({ type: "response.cancel" }); this.out && (this.out.muted = true);
+    if (this.responding) this.send({ type: "response.cancel" });
+    this.out && (this.out.muted = true);
     this.send({ type: "input_audio_buffer.clear" }); this.track.enabled = true; this.onState("talk");
     return true;
   }

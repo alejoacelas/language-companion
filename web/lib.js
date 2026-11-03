@@ -25,7 +25,7 @@ export const ui = { onKey: null, onKeyUp: null };
 let current = null;
 let playToken = 0;
 export function stopAudio() { playToken++; current?.pause(); current = null; }
-const ttsUrl = (text, lang) => `/api/tts?text=${encodeURIComponent(text)}&lang=${lang}`;
+const ttsUrl = (text, lang, speed = 1) => `/api/tts?text=${encodeURIComponent(text)}&lang=${lang}${speed !== 1 ? `&speed=${speed}` : ""}`;
 
 function playUrl(url, token) {
   return new Promise(res => {
@@ -37,8 +37,8 @@ function playUrl(url, token) {
   });
 }
 
-// Speak German text with the local German voice.
-export function playTTS(text, lang = "de") { stopAudio(); return playUrl(ttsUrl(text, lang), playToken); }
+// Speak text with the local voice for its language; speed below 1 is a slower, re-synthesised reading.
+export function playTTS(text, lang = "de", speed = 1) { stopAudio(); return playUrl(ttsUrl(text, lang, speed), playToken); }
 
 // Split an English line with *German* words into [lang, text] segments.
 export function segments(line) {
@@ -49,11 +49,12 @@ export function segments(line) {
 }
 
 // Play a line, switching voices for German words inside English narration. Resolves true if it played to the end.
-export async function playLine(line) {
+// `speed` below 1 slows the German parts; narration stays at normal speed.
+export async function playLine(line, { speed = 1 } = {}) {
   stopAudio(); const token = playToken;
-  const segs = segments(line);
-  segs.forEach(([lang, text]) => fetch(ttsUrl(text, lang)).catch(() => {}));  // warm the cache in parallel
-  for (const [lang, text] of segs) if (!(await playUrl(ttsUrl(text, lang), token))) return false;
+  const segs = segments(line).map(([lang, text]) => [lang, text, lang === "de" ? speed : 1]);
+  segs.forEach(([lang, text, sp]) => fetch(ttsUrl(text, lang, sp)).catch(() => {}));  // warm the cache in parallel
+  for (const [lang, text, sp] of segs) if (!(await playUrl(ttsUrl(text, lang, sp), token))) return false;
   return true;
 }
 

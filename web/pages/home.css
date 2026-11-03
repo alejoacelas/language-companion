@@ -1,1 +1,38 @@
 /* Styles for the home page. */
+.hero-sub { margin: 6px 0 0; }
+.hero-go { display: grid; gap: 6px; justify-items: center; font-size: 13px; text-align: center; }
+
+.practice .row { gap: 8px; }
+.practice .btn { text-decoration: none; font-size: 15px; max-width: 100%; }
+.practice .btn .t { font-family: var(--serif); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.practice .btn:hover, button.stat:hover { border-color: var(--accent); }
+
+button.stat { text-align: left; color: inherit; font: inherit; }
+button.stat[aria-expanded="true"] { border-color: var(--accent); }
+.stat span kbd { margin-left: 4px; }
+
+.words ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 4px 20px; }
+.words li b { font: 600 16px var(--serif); }
+.words li span { font-size: 14px; }
+.words .tag { font: 11px var(--mono); color: var(--accent); background: var(--accent-soft); padding: 0 6px; border-radius: 4px; }
+
+.issues-row { display: grid; gap: 6px; font-size: 13px; }
+.serif + .issues-row { margin-top: 14px; }
+
+.lib-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; justify-content: space-between; }
+.lib-head h2 { margin: 0; }
+.lib-head input[type=text] { flex: 0 1 280px; font-size: 14px; padding: 6px 10px; }
+details.series summary { cursor: pointer; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; list-style: none; }
+details.series summary::-webkit-details-marker { display: none; }
+details.series summary::before { content: "▸"; color: var(--muted); font-size: 12px; }
+details.series[open] summary::before { content: "▾"; }
+details.series summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+details.series .items, details.series form { margin-top: 8px; }
+#storyform { max-width: 520px; }
+
+@media (max-width: 500px) {
+  .hero { padding: 20px; }
+  .hero-go { width: 100%; }
+  .lib-head input[type=text] { flex: 1 1 100%; }
+}
+#closest .items button { text-align: left; }

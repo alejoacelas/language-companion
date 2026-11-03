@@ -32,7 +32,7 @@ function renderSteps() {
 }
 
 // What a page needs to take part in a block. Outside a block, ctx.block is null and ctx.next is undefined.
-const ctx = () => block ? { block, next: nextStep, exit: exitBlock } : { block: null };
+const ctx = () => block ? { block, next: nextStep, exit: exitBlock, startNext: () => { block = null; renderSteps(); startBlock(); } } : { block: null };
 
 function goStep(step) {
   if (!block) return;
@@ -59,13 +59,17 @@ export async function startBlock() {
 function resetPage() { ui.onKey = null; ui.onKeyUp = null; $("#pop").hidden = true; stopAudio(); stopCoach(); }
 
 async function route() {
-  const [r, id] = location.hash.slice(1).split("/");
+  const [r, id, sub] = location.hash.slice(1).split("/");
   if (r === "block" && block) return;
   resetPage();
   if (r !== "block") { block = null; renderSteps(); }
   try {
+    if (r === "review") {
+      const cards = await api("/api/cards/due?limit=50");
+      return showReview(view, { block: null, cards, next: () => location.hash = "home" });
+    }
     if (r === "read" && id) return showReader(view, await api(`/api/item/${id}`), ctx());
-    if (r === "speak" && id) return showSpeak(view, await api(`/api/item/${id}`), ctx());
+    if (r === "speak" && id) return showSpeak(view, await api(`/api/item/${id}`), ctx(), sub);
   } catch (e) { fail(e); }
   showHome(view, { startBlock });
 }

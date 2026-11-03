@@ -1,1 +1,13 @@
 /* Styles for the wrap page. */
+.wrap { display: grid; gap: 16px; }
+.wrap-summary, .wrap-stats, .wrap-next { margin: 0; }
+.wrap-fb { display: grid; gap: 10px; justify-items: start; }
+.wrap-fb p { margin: 0; }
+.wrap-quiet { background: none; border: 0; padding: 4px 0; color: var(--muted); font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
+.wrap-quiet:hover { color: var(--fg); }
+.wrap-words { display: flex; flex-wrap: wrap; gap: 6px; }
+.wrap-word { border: 0; border-radius: 999px; background: var(--accent-soft); padding: 3px 12px; font: 16px var(--serif); color: var(--fg); text-align: left; }
+.wrap-word small { font: 13px var(--sans); color: var(--muted); }
+.wrap-word:hover { background: color-mix(in srgb, var(--accent-soft) 70%, var(--accent)); }
+@media (max-width: 480px) { .wrap .row .btn { flex: 1 1 100%; justify-content: center; } }
+.wrap a.btn { text-decoration: none; }

@@ -1,1 +1,24 @@
 /* Styles for the review page. */
+.rv { padding: 20px 20px 28px; gap: 16px; }
+.rv-top { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rv-count { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.rv-tools { display: flex; gap: 4px; flex-wrap: wrap; }
+.rv-quiet { background: none; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; font-size: 14px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.rv-quiet:hover { color: var(--fg); border-color: var(--line); background: var(--bg); }
+.rv-bar { width: 100%; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin-bottom: 20px; }
+.rv-bar span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.rv-word { display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.rv-say { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px 5px 10px; color: var(--accent); display: inline-flex; gap: 6px; align-items: center; }
+.rv-say:hover { background: var(--accent-soft); border-color: var(--accent-soft); }
+.rv-ex { display: flex; gap: 10px; align-items: center; justify-content: center; max-width: 60ch; }
+.rv-ex-en { font-size: 14px; color: var(--muted); }
+.rv-src { font: 12px var(--mono); color: var(--muted); }
+.rv .rate { margin-top: 8px; }
+.rv-undo { min-height: 30px; }
+.rv-undo .rv-quiet { color: var(--fg); background: var(--warn-soft); }
+@media (prefers-reduced-motion: reduce) { .rv-bar span { transition: none; } }
+@media (max-width: 480px) {
+  .rv .rate { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .rv .rate .btn { justify-content: center; }
+  .rv-tools kbd { display: none; }
+}

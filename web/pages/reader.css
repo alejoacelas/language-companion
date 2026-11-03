@@ -1,1 +1,34 @@
 /* Styles for the reader page. */
+
+/* The media and the control bar stay in view while the lines scroll. JS sets `top` to the topbar's height. */
+.reader .rstick { position: sticky; top: 56px; z-index: 3; background: var(--bg); display: grid; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.reader .rstick .media { position: static; padding-bottom: 0; }
+.reader .rstick video { width: 100%; max-height: 42vh; display: block; }
+
+.rbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rbar .btn { padding: 6px 12px; }
+.rbar .btn.on, .rbar .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.rbar .btn.quiet { margin-left: auto; color: var(--muted); }
+.rbar .btn.primary kbd { color: var(--page); background: transparent; border-color: color-mix(in srgb, var(--page) 50%, transparent); }
+.rbar .short { display: none; }
+@media (max-width: 700px) { .rbar .short { display: inline; } }
+.rprog { display: inline-flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.rtrack { width: 72px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; display: inline-block; }
+.rtrack span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+/* Hidden translations stay clickable; a click or T shows one line's translation. */
+.hide-en .line .tr { visibility: visible; color: transparent; background: var(--line); border-radius: 4px; cursor: pointer; align-self: start; justify-self: start; min-width: 8ch; margin-top: 18px; padding: 0 6px; user-select: none; }
+.hide-en .line.show .tr { color: var(--muted); background: none; user-select: auto; }
+.line { cursor: pointer; scroll-margin-top: calc(var(--stick-bottom, 120px) + 8px); scroll-margin-bottom: calc(var(--keys-h, 40px) + 16px); }
+.line:hover:not(.sel) { background: color-mix(in srgb, var(--page) 60%, transparent); }
+
+.rend { display: grid; gap: 10px; justify-items: start; padding: 16px 12px 8px; border-top: 1px solid var(--line); }
+
+@media (max-width: 700px) {
+  .rbar { gap: 6px; }
+  .rbar .btn { padding: 6px 10px; }
+  .rbar kbd, .rbar .long, .rend kbd, .rbar .quiet, .rtrack { display: none; }
+  .hide-en .line .tr { margin-top: 4px; }
+  .reader .rstick .yt { max-height: 30vh; }
+}
+@media (prefers-reduced-motion: reduce) { .rtrack span { transition: none; } }
