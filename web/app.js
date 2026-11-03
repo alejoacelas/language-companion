@@ -304,7 +304,7 @@ async function showSpeak(item, inBlock) {
   };
   onKeyUp = e => { if (e.key === "t") coach.pushToTalk(false); };
   draw();
-  if (inBlock) coach.start().catch(fail);
+  coach.start().catch(fail);
 }
 let onKeyUp = null;
 
@@ -328,6 +328,7 @@ async function route() {
   const [r, id] = location.hash.slice(1).split("/");
   if (r === "block" && block) return;  // startBlock already rendered the step
   onKey = null; onKeyUp = null; $("#pop").hidden = true;
+  if (r !== "speak") coach.stop();  // the coach session lives only on Speak pages
   if (r === "read" && id) { block = null; renderSteps(); return showReader(await api(`/api/item/${id}`).catch(fail), false); }
   if (r === "speak" && id) { block = null; renderSteps(); return showSpeak(await api(`/api/item/${id}`).catch(fail), false); }
   showHome();
