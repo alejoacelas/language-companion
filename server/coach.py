@@ -27,33 +27,17 @@ def _json(text: str) -> dict:
 
 
 def _ask(model: str, system: str, user: str, max_tokens: int = 2000) -> str:
-    r = client().messages.create(model=model, max_tokens=max_tokens, system=system,
-                                 messages=[{"role": "user", "content": user}])
+    with client().messages.stream(model=model, max_tokens=max_tokens, system=system,
+                                  messages=[{"role": "user", "content": user}]) as s:
+        r = s.get_final_message()
     return "".join(b.text for b in r.content if b.type == "text")
 
 
 COACH_SYSTEM = """You are a German coach for an adult who started from zero (native Spanish, fluent English).
-They study in 15-minute blocks: review (~3 min), read or watch (~6 min), speak (~5 min), wrap-up (~1 min).
+They study in 15-minute blocks built around a ladder of story lessons that add German gradually:
+review cards, meet the lesson's new words, read the lesson, practise speaking with a voice coach, answer two questions.
 They enjoy material that mixes English narration with German dialogue (DW's "Harry"), and anime (Kaguya-sama, Chainsaw Man).
 Be concrete and brief. Reply with JSON only."""
-
-
-def plan_block() -> dict:
-    state = progress.summary()
-    cat = [c for c in content.catalog() if c["status"] != "done"][:80]
-    user = f"""Learner state:
-{json.dumps(state, ensure_ascii=False)}
-
-Available items not yet finished (id, series, title, level, kind, german_lines, status):
-{json.dumps([[c['id'], c['series'], c['title'], c['level'], c['kind'], c['german_lines'], c['status']] for c in cat], ensure_ascii=False)}
-
-Plan the next block. Continue an in-progress series in order unless the learner seems stuck; mix in an anime clip about every third block.
-Return JSON: {{"item_id": str, "why": str (one sentence), "focus_sounds": [up to 2 IPA phones to practise, from top_issues or typical for this text],
-"tip": str (one practical sentence shown before the block)}}"""
-    plan = _json(_ask(SMART, COACH_SYSTEM, user, 800))
-    if plan.get("item_id") not in {c["id"] for c in cat} and cat:
-        plan["item_id"] = cat[0]["id"]
-    return plan
 
 
 def summarize_block(block_id: int) -> str:

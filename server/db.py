@@ -1,12 +1,13 @@
 """SQLite storage for cards, reviews, pronunciation attempts, blocks and the activity log."""
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 DATA = Path(__file__).resolve().parent.parent / "data"
-DB_PATH = DATA / "app.db"
+DB_PATH = Path(os.environ.get("APP_DB") or DATA / "app.db")  # APP_DB points tests at a scratch database
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cards (

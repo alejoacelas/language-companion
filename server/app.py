@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 os.environ.setdefault("HF_HOME", str(ROOT / "data" / "models"))
 
-from . import coach, content, db, progress, srs  # noqa: E402
+from . import coach, content, curriculum, db, progress, srs  # noqa: E402
 
 app = FastAPI(title="language-companion")
 
@@ -48,15 +48,44 @@ REALTIME_VOICE = "marin"
 
 @app.get("/api/state")
 def state():
-    return {"progress": progress.summary(), "catalog": content.catalog()}
+    sets = curriculum.form_sets()
+    cat = content.catalog()
+    items = content.all_items()
+    for c in cat:
+        c["ready"] = curriculum.readiness(items[c["id"]], sets)["known"] if c["id"] in items else None
+    return {"progress": progress.summary(), "curriculum": curriculum.status(), "catalog": cat}
 
 
 @app.post("/api/block/start")
 def block_start():
-    plan = coach.plan_block()
+    """A block covers the next lesson: due cards, its new words, the text, speaking, two questions."""
+    item = curriculum.next_lesson()
+    plan = {"item_id": item["id"], "why": item.get("summary"),
+            "focus_sounds": [i["expected"] for i in progress.pronunciation_issues(top=2)]}
     block_id = db.run("INSERT INTO blocks (started_at, plan) VALUES (?,?)", db.now(), json.dumps(plan, ensure_ascii=False))
-    db.log("block_started", plan.get("item_id"), block_id, plan=plan)
-    return {"block_id": block_id, "plan": plan, "cards": srs.due(15), "item": content.get(plan["item_id"])}
+    db.log("block_started", item["id"], block_id, plan=plan)
+    return {"block_id": block_id, "plan": plan, "cards": srs.due(15), "item": item}
+
+
+@app.post("/api/item/{item_id}/meet")
+def meet(item_id: str, block_id: int | None = None):
+    item = content.get(item_id)
+    if not item or item.get("kind") != "lesson":
+        raise HTTPException(404, f"No lesson {item_id}")
+    return curriculum.meet(item, block_id)
+
+
+class Quiz(BaseModel):
+    item_id: str
+    correct: int
+    total: int
+    block_id: int | None = None
+
+
+@app.post("/api/quiz")
+def quiz(q: Quiz):
+    db.log("quiz", q.item_id, q.block_id, correct=q.correct, total=q.total)
+    return {"ok": True}
 
 
 class BlockEnd(BaseModel):
@@ -68,7 +97,12 @@ def block_end(block_id: int, body: BlockEnd):
     db.log("block_ended", None, block_id, seconds=body.seconds)
     summary = coach.summarize_block(block_id)
     db.run("UPDATE blocks SET ended_at=?, summary=? WHERE id=?", db.now(), summary, block_id)
-    return {"summary": summary, "progress": progress.summary()}
+    return {"summary": summary, "progress": progress.summary(), "curriculum": curriculum.status()}
+
+
+@app.get("/api/curriculum")
+def curriculum_status():
+    return curriculum.status()
 
 
 class Event(BaseModel):
@@ -111,6 +145,10 @@ def item_progress(item_id: str, p: ItemProgress):
            "ON CONFLICT(item_id) DO UPDATE SET status=excluded.status, last_ts=excluded.last_ts, "
            "seconds=item_progress.seconds+excluded.seconds", item_id, p.status, db.now(), p.seconds)
     db.log(f"item_{p.status}", item_id, p.block_id, seconds=p.seconds)
+    if p.status == "done" and (it := content.get(item_id)):
+        curriculum.item_finished(it)
+        if it.get("kind") == "lesson":
+            curriculum.keep_one_ahead()
     return {"ok": True}
 
 
@@ -131,10 +169,14 @@ def story(req: StoryReq):
 class Gloss(BaseModel):
     word: str
     sentence: str
+    item_id: str | None = None
+    block_id: int | None = None
 
 
 @app.post("/api/gloss")
 def gloss(g: Gloss):
+    db.log("word_clicked", g.item_id, g.block_id, word=g.word)
+    curriculum.word_clicked(g.word)
     return coach.gloss(g.word, g.sentence)
 
 
@@ -177,55 +219,94 @@ def tts(text: str, lang: str = "de", voice: str | None = None):
 
 
 @app.post("/api/pronounce")
-async def pronounce(audio: UploadFile = File(...), text_de: str = Form(...), item_id: str | None = Form(None),
+async def pronounce(audio: UploadFile = File(...), text_de: str = Form(""), item_id: str | None = Form(None),
                     line_id: str | None = Form(None), block_id: int | None = Form(None)):
+    """Phone-by-phone comparison of a recording with its target sentence.
+
+    Without a target (free speech in the voice coach) it returns only what the recognizers heard.
+    `for_coach` is a compact text rendering the voice model receives along with the learner's audio.
+    """
     from .speech import phonemes
     data = await audio.read()
     rec = phonemes.recognize(data, audio.content_type or "audio/webm")
+    if not text_de.strip():
+        heard = {k: "".join(v) for k, v in rec["phones"].items()}
+        return {"text": "", "heard_ipa": heard, "words": [], "score": None,
+                "for_coach": "No target sentence. Heard: " + " | ".join(f"{k}: {v}" for k, v in heard.items())}
     result = phonemes.compare(text_de, rec)
     phones = [p for w in result.get("words", []) for p in w.get("phones", [])]
-    score = result.get("score")
-    if score is None and phones:
-        score = round(sum(p.get("status") == "ok" for p in phones) / len(phones), 2)
-    result["score"] = score
+    result["score"] = round(sum(p.get("status") == "ok" for p in phones) / len(phones), 2) if phones else None
+    result["for_coach"] = phonemes.format_result(result)
     db.run("INSERT INTO attempts (block_id, item_id, line_id, text_de, score, result, ts) VALUES (?,?,?,?,?,?,?)",
-           block_id, item_id, line_id, text_de, score, json.dumps(result, ensure_ascii=False), db.now())
-    db.log("pronunciation_attempt", item_id, block_id, text=text_de, score=score)
+           block_id, item_id, line_id, text_de, result["score"], json.dumps(result, ensure_ascii=False), db.now())
+    db.log("pronunciation_attempt", item_id, block_id, text=text_de, score=result["score"])
     return result
 
 
-VOICE_COACH = """You are a warm, concise German pronunciation coach speaking with an adult beginner (native Spanish, fluent English).
-Speak English, and say German words slowly and clearly, exaggerating the target sound once, then at normal speed.
-You will receive messages starting with ATTEMPT: they contain the target sentence and a phone-by-phone comparison of what a
-speech recognizer heard ("expected" vs "heard"; "uncertain" means the two recognizers disagreed, so be tentative there).
-For each ATTEMPT: say in one sentence what went well, then coach the single most important error: name the word, model it,
-and give one physical tip (lips, tongue, length). Compare to Spanish or English sounds when helpful. Keep it under 20 seconds.
-If everything is ok, say so briefly and model the sentence once with natural rhythm. Never invent errors not in the data.
-If the learner speaks to you directly, answer briefly and steer back to practice.
+VOICE_COACH = """You are a warm, playful German pronunciation coach in a live voice session with an adult beginner
+(native Spanish, fluent English). You lead the session. Speak mostly English; say German slowly and clearly.
 
-Use these tips (from Spanish) for German sounds:
+How the session works:
+- Each time the learner speaks you get their audio, followed by a message starting with PHONETICS. It contains what two
+  phoneme recognizers heard, compared phone by phone with the sentence on screen ([e→h] means expected e, heard h;
+  [-e] missing; [+h] extra; [e? ...] the recognizers disagree, so be tentative there). Use both your own listening and
+  this data. Never invent errors that neither shows. The recognizers are imperfect: if they flag something you clearly
+  heard right, trust your ears and say nothing about it.
+- Use show_sentence to put the next German sentence or word on the learner's screen before asking them to say it.
+  Pick from the practice material below, or make a short sentence from it. Start easy, build up.
+- You decide the flow: model a sound, drill one word, go back to a whole sentence, chat briefly in simple German,
+  or move on when it's good. Keep each turn short (under 15 seconds) and end it with a clear request.
+- Coach one thing at a time: the most important error. Give one physical tip (lips, tongue, length) and model it,
+  exaggerated once, then at normal speed. Celebrate real progress briefly.
+- If the learner asks something, answer briefly and steer back to practice.
+- When the learner says they want to stop, or after about 5 minutes, sum up in two sentences and call end_practice.
+
+Tips (from Spanish) for German sounds:
 - ö (ø/œ): tongue says Spanish "e", lips round as for "o". Hold "eee", then round the lips without moving the tongue.
 - ü (y/ʏ): tongue says Spanish "i", lips round tightly as for "u". Hold "iii", then round the lips.
 - ä (ɛ): an open "e", like the "e" in Spanish "perro" but a bit wider.
-- ch after i/e/ä/ö/ü or a consonant (ç, "ich"): whisper the "y" of Spanish "ya" with the tongue high; it is not "sh" (ʃ) and not Spanish "j".
+- ch after i/e/ä/ö/ü or a consonant (ç, "ich"): whisper the "y" of Spanish "ya" with the tongue high; not "sh" (ʃ), not Spanish "j".
 - ch after a/o/u (x, "Buch"): like a soft Spanish "j" in "jamón".
-- r (ʁ): made at the back of the throat, close to a soft gargle or a French r; never a Spanish tapped or rolled r. After a vowel at a syllable end ("Tor", "sehr") it becomes a short "a"-like vowel (ɐ).
+- r (ʁ): at the back of the throat, close to a soft gargle or a French r; never a Spanish tapped or rolled r.
+  After a vowel at a syllable end ("Tor", "sehr") it becomes a short "a"-like vowel (ɐ).
 - Long vs short vowels change meaning ("Staat" vs "Stadt"): stretch long vowels clearly; Spanish has no length difference.
 - Final b/d/g sound like p/t/k ("Tag" ends in k, "Rad" in t).
 - z is "ts"; w is English "v"; v is usually "f"; s before a vowel is a buzzing "z"; sp/st at a word start is "shp/sht".
 - Unstressed -e and -en are a weak schwa (ə), never a full Spanish "e"."""
 
+COACH_TOOLS = [
+    {"type": "function", "name": "show_sentence",
+     "description": "Show a German sentence or word on the learner's screen as the current thing to say. The phonetic comparison of their next attempt is made against it.",
+     "parameters": {"type": "object", "properties": {
+         "text_de": {"type": "string", "description": "German text to say"},
+         "en": {"type": "string", "description": "English meaning"}}, "required": ["text_de", "en"]}},
+    {"type": "function", "name": "end_practice",
+     "description": "End the speaking practice after summing up.",
+     "parameters": {"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}},
+]
+
 
 @app.post("/api/realtime/token")
-async def realtime_token():
-    focus = ", ".join(f"{i['expected']}→{i['heard']}" for i in progress.pronunciation_issues(top=5))
-    instructions = VOICE_COACH + (f"\nRecurring issues so far: {focus}." if focus else "")
+async def realtime_token(item_id: str | None = None):
+    issues = ", ".join(f"{i['expected']}→{i['heard']} (e.g. {i['example_word']})" for i in progress.pronunciation_issues(top=5))
+    material = ""
+    if item_id and (it := content.get(item_id)):
+        de = [f"{l['text']} = {l.get('en', '')}" for l in it.get("lines", []) if l.get("lang") == "de"][:40]
+        new = [f"{w['de']} = {w['en']}" for w in (it.get("lesson") or {}).get("new_words", [])]
+        material = (f"\n\nPractice material, from the text the learner just read ({it.get('title')}):\n" + "\n".join(de)
+                    + (f"\nNew words in this lesson: {'; '.join(new)}" if new else ""))
+    known = [w["de"] for w in curriculum.word_states()][-80:]
+    instructions = (VOICE_COACH + material
+                    + (f"\n\nGerman words the learner has met: {', '.join(known)}. Use only these in your own German." if known else "")
+                    + (f"\nRecurring pronunciation issues so far: {issues}." if issues else ""))
     async with httpx.AsyncClient(timeout=20) as cx:
         r = await cx.post("https://api.openai.com/v1/realtime/client_secrets",
                           headers={"Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"},
                           json={"session": {"type": "realtime", "model": REALTIME_MODEL, "instructions": instructions,
+                                            "tools": COACH_TOOLS, "tool_choice": "auto",
                                             "audio": {"output": {"voice": REALTIME_VOICE},
-                                                      "input": {"transcription": {"model": "gpt-4o-mini-transcribe"}}}}})
+                                                      "input": {"turn_detection": None,
+                                                                "transcription": {"model": "gpt-4o-mini-transcribe"}}}}})
     if r.status_code != 200:
         raise HTTPException(502, f"OpenAI realtime token failed: {r.text[:300]}")
     return {"value": r.json()["value"], "model": REALTIME_MODEL}

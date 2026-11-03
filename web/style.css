@@ -16,9 +16,9 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--line); b
   border-bottom: 1px solid var(--line); display: flex; gap: 16px; align-items: center; padding: 10px max(16px, 3vw); flex-wrap: wrap; }
 .brand { font: 600 18px var(--serif); color: var(--fg); text-decoration: none; }
 .steps { display: flex; gap: 6px; flex-wrap: wrap; }
-.steps span { font: 12px var(--mono); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
-.steps span.on { background: var(--accent); color: var(--page); border-color: var(--accent); }
-.steps span.done { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
+.steps button { background: none; cursor: pointer; font: 12px var(--mono); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.steps button.on { background: var(--accent); color: var(--page); border-color: var(--accent); }
+.steps button.done { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
 .clock { margin-left: auto; font: 500 15px var(--mono); font-variant-numeric: tabular-nums; }
 .clock.over { color: var(--bad); }
 
@@ -109,3 +109,39 @@ input[type=text] { font: inherit; padding: 8px 10px; border: 1px solid var(--lin
   font-size: 13px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
 .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--page); padding: 6px 14px; border-radius: 6px; z-index: 30; }
 .err { color: var(--bad); }
+
+/* shared */
+.mono { font: 12px var(--mono); }
+.serif { font: 18px/1.6 var(--serif); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.chip { font: 15px var(--serif); padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); }
+
+/* home */
+.hero { display: flex; gap: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 28px; }
+.hero > div { flex: 1 1 360px; }
+.stat small { font-size: 16px; color: var(--muted); }
+.items .ready { margin-left: 6px; font: 11px var(--mono); color: color-mix(in srgb, var(--accent) calc(var(--r) * 100%), var(--muted)); }
+
+/* reader: new words and German inside narration */
+.w.new { background: var(--warn-soft); }
+.de-inline { font-style: normal; color: var(--fg); font-weight: 600; }
+.line.en .de-inline .w { font-family: var(--serif); }
+
+/* speak */
+.talkrow { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.talk { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 132px; height: 132px; border-radius: 50%;
+  border: 3px solid var(--bad); background: var(--page); color: var(--bad); font-weight: 600; touch-action: none; user-select: none; }
+.talk.on { background: var(--bad); color: var(--page); animation: pulse 1s infinite; }
+.talk.on kbd { color: var(--page); background: transparent; }
+@media (prefers-reduced-motion: reduce) { .talk.on { animation: none; } }
+.dot.speaking { background: var(--accent); animation: pulse 1.2s infinite; }
+.dot.thinking, .dot.connecting { background: var(--warn); }
+#hint { max-width: 46ch; font-size: 14px; }
+
+/* wrap */
+.quiz { display: grid; gap: 16px; }
+.quiz h1 { font-size: 24px; }
+.options { display: grid; gap: 8px; }
+.options .btn { justify-content: flex-start; text-align: left; }
+.options .btn.right { background: var(--accent-soft); border-color: var(--accent); }
+.options .btn.wrong { background: var(--bad-soft); border-color: var(--bad); }
