@@ -89,12 +89,38 @@ def tts(text: str, lang: str = "de", voice: str | None = None, speed: float = 1.
     return FileResponse(tts_mod.speak(text, lang=lang, voice=voice, speed=speed))
 
 
+VOWELS = set("aeiouyøœɛɪʏʊɔəɐ")
+R_VOCALIZED = {"ɐ", "ə", "a", None}
+
+
+def accept_vocalized_r(result: dict) -> None:
+    """espeak expects ʁ in "hier" or "Uhr", but native speakers say a short ɐ there or drop it.
+
+    Without this, a native recording of "hier" is reported as wrong. An r after a vowel that is heard as ɐ,
+    or not at all, is marked ok.
+    """
+    for w in result["words"]:
+        ps = w["phones"]
+        for i, p in enumerate(ps):
+            prev = next((q["expected"] for q in reversed(ps[:i]) if q.get("expected")), None)
+            if p.get("expected") != "ʁ" or not prev or prev[0] not in VOWELS:
+                continue
+            heard = {p.get("heard")} if p["status"] in ("substituted", "missing") else (
+                {p.get(m, {}).get("heard") for m in ("zipa", "wav2vec2")} if p["status"] == "uncertain" else set())
+            if p["status"] != "ok" and heard <= R_VOCALIZED:
+                ps[i] = {"expected": "ʁ", "status": "ok", "note": "vocalized r"}
+        statuses = {p["status"] for p in ps}
+        w["status"] = ("error" if statuses & {"substituted", "missing", "extra"}
+                       else "uncertain" if "uncertain" in statuses else "ok")
+
+
 @app.post("/api/check")
 async def check(audio: UploadFile = File(...), text_de: str = Form(...), item_key: str = Form(""), lesson_n: int = Form(0)):
     """Compare a spoken answer with the expected German, sound by sound, and log it as a pronunciation attempt."""
     from server.speech import phonemes
     rec = phonemes.recognize(await audio.read(), audio.content_type or "audio/webm")
     result = phonemes.compare(text_de, rec)
+    accept_vocalized_r(result)
     phones = [p for w in result["words"] for p in w["phones"]]
     ok = sum(p["status"] == "ok" for p in phones)
     maybe = sum(p["status"] == "uncertain" for p in phones)

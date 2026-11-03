@@ -150,7 +150,8 @@ Requirements:
   (a few function words are fine). The learner later plays the part named in learner_speaker.
 - Cues are English, spoken by a narrator. The first cue is direct ("How do you say 'excuse me'?"). Add one or two role-play
   cues that ask for the same German in the situation ("You want to get a passer-by's attention. What do you say?").
-  A cue must make the exact German answer unambiguous.
+  A cue must make the exact German answer unambiguous. A role-play cue sets up a situation; it never says "again"
+  and never gives pronunciation hints (put those in "note").
 - buildup: only for items with three or more syllables or a hard sound cluster. Pieces from the end of the item backwards,
   written in German spelling, each a pronounceable syllable sequence, the last piece being the full item. Otherwise [].
 - intro_en: one narrator sentence introducing the item, e.g. "Here's how you say 'excuse me'."

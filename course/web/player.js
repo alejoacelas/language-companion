@@ -24,7 +24,7 @@ export class Lesson {
     this.audio = null; this.abortListen = null;
     this.showText = false; this.lastDe = null; this.tipsSaid = new Set(); this.coachBreaks = 0;
     const key = id => `L${String(lesson.n).padStart(2, "0")}-${id}`;
-    const mk = (d, kind, k = -1, due = 0) => ({ key: d.key || key(d.id), d, kind, k, due, recalls: 0, misses: 0, reached: -1, errStreak: 0, coached: false });
+    const mk = (d, kind, k = -1, due = 0) => ({ key: d.key || key(d.id), d, kind, k, due, recalls: 0, misses: 0, reached: -1, errStreak: 0, coached: false, lastAsked: -Infinity });
     this.items = lesson.items.map(d => mk(d, "new"));
     this.combos = (lesson.combos || []).map(d => mk(d, "combo"));
     // Earlier items start at the 2-minute level, spread over the first minutes.
@@ -184,11 +184,21 @@ export class Lesson {
         const next = this.combos.find(i => i.k < 0 && this.ready(i)) || this.items.find(i => i.k < 0);
         if (next) { await (next.kind === "combo" ? this.introduceCombo(next) : this.introduce(next)); continue; }
       }
-      // Nothing due and nothing new: bring the next item forward rather than sit in silence.
-      const soonest = live().sort((a, b) => a.due - b.due)[0];
-      if (!soonest) break;
-      await this.recall(soonest);
+      // Nothing due and nothing new: bring forward the item that has waited longest relative to its interval,
+      // skipping anything asked in the last 30 s so one item isn't drilled back to back.
+      const ripeness = i => (t - i.lastAsked) / INTERVALS[i.k];
+      const early = live().filter(i => t - i.lastAsked >= 30).sort((a, b) => ripeness(b) - ripeness(a))[0];
+      if (early) { await this.recall(early); continue; }
+      if (!live().length) break;
+      await this.idle(Math.min(...live().map(i => i.due)) - t);
     }
+  }
+
+  // A short silence while waiting for the next item to come due (rare: only when every item was just asked).
+  async idle(seconds) {
+    this.status("narrator"); this.show({ label: "Pause" });
+    const end = performance.now() + Math.max(1, Math.min(10, seconds)) * 1000;
+    while (performance.now() < end) { await new Promise(r => setTimeout(r, 200)); await this.gate(); }
   }
 
   async repeatAfter(text, item) {
@@ -215,7 +225,7 @@ export class Lesson {
       await this.repeatAfter(d.de, item);
     }
     if (d.note) { this.show({ cue: d.note, label: "Note", item, de: d.de }); await this.narrate(d.note); }
-    item.k = 0; item.due = this.clock() + INTERVALS[0];
+    item.k = 0; item.due = this.clock() + INTERVALS[0]; item.lastAsked = this.clock();
   }
 
   // A combination is first attempted from its parts, before the learner hears it.
@@ -228,7 +238,7 @@ export class Lesson {
     this.show({ cue: d.cues[0], label: "Try it", item, de: d.de, res: await checking });
     await this.narrate("Listen and repeat.");
     await this.repeatAfter(d.de, item);
-    item.k = 0; item.due = this.clock() + INTERVALS[0];
+    item.k = 0; item.due = this.clock() + INTERVALS[0]; item.lastAsked = this.clock();
   }
 
   cueFor(item) {
@@ -246,9 +256,12 @@ export class Lesson {
     await this.native(d.de);
     const res = await checking;
     const ok = !!res && res.recall_score >= RECALL_PASS;
+    // An item asked well before its time only moves up a level if at least half its interval has passed.
+    const early = this.clock() - item.lastAsked < INTERVALS[Math.max(0, item.k)] / 2;
+    item.lastAsked = this.clock();
     this.show({ cue, label: ok ? "Recalled" : r.spoke ? "Not quite" : "No answer heard", item, de: d.de, res });
     if (ok) {
-      item.recalls++; item.k++; item.reached = Math.max(item.reached, item.k - 1);
+      item.recalls++; if (!early) item.k++; item.reached = Math.max(item.reached, item.k - 1);
       item.due = this.clock() + (INTERVALS[item.k] ?? Infinity);
       await this.pronFeedback(item, res);
     } else {
