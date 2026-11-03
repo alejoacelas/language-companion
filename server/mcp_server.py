@@ -7,7 +7,7 @@ import json
 
 from mcp.server.mcpserver import MCPServer
 
-from . import content, progress, srs
+from . import content, curriculum, progress, srs
 
 mcp = MCPServer("language-companion")
 
@@ -16,6 +16,19 @@ mcp = MCPServer("language-companion")
 def progress_summary() -> str:
     """Overall progress: blocks done, streak, card counts, recent words, top pronunciation issues, recent block summaries."""
     return json.dumps(progress.summary(), ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def curriculum_status() -> str:
+    """Where the learner is on the lesson ladder: lessons written and done, the next lesson, words met and known."""
+    return json.dumps(curriculum.status(), ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def words(known_only: bool = False) -> str:
+    """Every German word the learner has met in lessons, with meaning, lesson, reviews, readings and look-ups."""
+    ws = [{k: w[k] for k in ("de", "en", "lesson", "known", "good_reviews", "seen", "clicks")} for w in curriculum.word_states()]
+    return json.dumps([w for w in ws if w["known"] or not known_only], ensure_ascii=False)
 
 
 @mcp.tool()

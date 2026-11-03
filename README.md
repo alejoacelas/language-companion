@@ -2,10 +2,17 @@
 
 A local app for learning German from zero in 15-minute blocks.
 
-1. **Review (3 min):** spaced-repetition cards made from words you saved while reading.
-2. **Read or watch (6 min):** DW's *Harry – gefangen in der Zeit*, *Mission Berlin* and *Radio D*, German-dub anime clips (Kaguya-sama, Chainsaw Man), or new stories Claude writes. All mix English with German. Click a word to see its meaning and save it as a card. Press Space to hear the selected line.
-3. **Speak (5 min):** say 3–5 lines from the text. Two phoneme recognizers on your Mac write down the sounds you made, and the app compares them sound by sound with the target. An OpenAI live voice coach then talks you through the main error. Hold T to talk to the coach.
-4. **Wrap-up (1 min):** Claude summarises the block and plans the next one from your activity log.
+The core is a ladder of short lessons. Each lesson is an episode of one ongoing story that Claude writes for you: an English narrator tells it and the characters speak German. Lesson 1 has a handful of German words. Each lesson adds 3–10 new words from a list ordered by how often they appear in DW's beginner courses, and reuses the ones you've met, until German is about half the text. Claude picks the number of new words from your quiz answers, card reviews and how often you look words up.
+
+A block runs:
+
+1. **Review (3 min):** spaced-repetition cards, including every word a lesson introduced.
+2. **New words (1 min):** hear each new word alone and in a sentence from the story.
+3. **Read (6 min):** the lesson, read aloud with an English voice for the narrator and a German voice for German. Click a word for its meaning; new words are highlighted.
+4. **Speak (4 min):** a live session with an OpenAI voice coach. Hold Space and talk. The coach hears you and also receives a sound-by-sound transcription from two phoneme recognizers on your Mac, compared with the sentence it put on screen. It decides what to practise next.
+5. **Wrap-up (1 min):** two questions about the story, then Claude's summary.
+
+The home page also lists the real material you're working towards (DW's *Harry*, *Mission Berlin* and *Radio D*, and German-dub anime clips), each with the share of its German words you already know.
 
 Your progress is available to any LLM through the MCP server in `.mcp.json`.
 
