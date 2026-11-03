@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "language-companion": {
+      "command": "uv",
+      "args": ["run", "--directory", "/Users/alejo/best/projects/2026-11-03-language-companion", "python", "-m", "server.mcp_server"]
+    }
+  }
+}
