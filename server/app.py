@@ -201,7 +201,19 @@ speech recognizer heard ("expected" vs "heard"; "uncertain" means the two recogn
 For each ATTEMPT: say in one sentence what went well, then coach the single most important error: name the word, model it,
 and give one physical tip (lips, tongue, length). Compare to Spanish or English sounds when helpful. Keep it under 20 seconds.
 If everything is ok, say so briefly and model the sentence once with natural rhythm. Never invent errors not in the data.
-If the learner speaks to you directly, answer briefly and steer back to practice."""
+If the learner speaks to you directly, answer briefly and steer back to practice.
+
+Use these tips (from Spanish) for German sounds:
+- ö (ø/œ): tongue says Spanish "e", lips round as for "o". Hold "eee", then round the lips without moving the tongue.
+- ü (y/ʏ): tongue says Spanish "i", lips round tightly as for "u". Hold "iii", then round the lips.
+- ä (ɛ): an open "e", like the "e" in Spanish "perro" but a bit wider.
+- ch after i/e/ä/ö/ü or a consonant (ç, "ich"): whisper the "y" of Spanish "ya" with the tongue high; it is not "sh" (ʃ) and not Spanish "j".
+- ch after a/o/u (x, "Buch"): like a soft Spanish "j" in "jamón".
+- r (ʁ): made at the back of the throat, close to a soft gargle or a French r; never a Spanish tapped or rolled r. After a vowel at a syllable end ("Tor", "sehr") it becomes a short "a"-like vowel (ɐ).
+- Long vs short vowels change meaning ("Staat" vs "Stadt"): stretch long vowels clearly; Spanish has no length difference.
+- Final b/d/g sound like p/t/k ("Tag" ends in k, "Rad" in t).
+- z is "ts"; w is English "v"; v is usually "f"; s before a vowel is a buzzing "z"; sp/st at a word start is "shp/sht".
+- Unstressed -e and -en are a weak schwa (ə), never a full Spanish "e"."""
 
 
 @app.post("/api/realtime/token")
