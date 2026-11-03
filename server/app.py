@@ -20,6 +20,18 @@ from . import coach, content, db, progress, srs  # noqa: E402
 app = FastAPI(title="language-companion")
 
 
+@app.on_event("startup")
+def warm_speech_models():
+    # Cold model loads take about 20 s; do them in the background so the first recording is fast.
+    import threading
+
+    def warm():
+        from .speech import phonemes, tts
+        phonemes.warm_up()
+        tts.warm_up()
+    threading.Thread(target=warm, daemon=True).start()
+
+
 @app.middleware("http")
 async def no_stale_frontend(request, call_next):
     # The front end has no build step, so make the browser revalidate it on every load.
