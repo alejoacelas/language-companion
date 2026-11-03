@@ -14,6 +14,23 @@ A block runs:
 
 The home page also lists the real material you're working towards (DW's *Harry*, *Mission Berlin* and *Radio D*, and German-dub anime clips), each with the share of its German words you already know.
 
+## Audio course
+
+A second app, in `course/`, teaches by speaking only, in 15-minute lessons that follow graduated-interval recall:
+
+- Each lesson opens with a short dialogue. Then it teaches 6–8 items: an English narrator gives a cue, you answer aloud, and a native voice gives the answer.
+- Each item comes back after about 5 s, 25 s, 2 min and 10 min, and sooner after a miss. Earlier lessons' items return on a schedule of 1, 5, 25 and 120 days.
+- Long words are built from the end ("-gung", "-digung", … "Entschuldigung"). Combinations are attempted before you hear them.
+- The lesson ends with the dialogue again, and then you play one of the two parts.
+- After every answer, the phoneme check marks the sounds you got wrong. The narrator gives a tip for that sound and has you repeat the word slowly. If you get an item wrong twice in a row, the voice coach takes a short break with you on it.
+- Move on once you recall 80% of the prompts. Otherwise, repeat the lesson. Claude writes the next lesson from your results, the word ladder and your pronunciation errors.
+
+```sh
+uv run uvicorn course.app:app --port 8770
+```
+
+Then open http://localhost:8770. Lesson scripts are saved in `data/course/`.
+
 Your progress is available to any LLM through the MCP server in `.mcp.json`.
 
 ## Run

@@ -12,7 +12,7 @@ Scope: a local web app for learning German from zero in 15-minute blocks, built 
 uv run uvicorn server.app:app --port 8765
 ```
 
-Then open http://localhost:8765.
+Then open http://localhost:8765. The audio course runs with `uv run uvicorn course.app:app --port 8770`.
 
 To test without touching the learner's progress, run a second server on a scratch database: `APP_DB=data/test.db uv run uvicorn server.app:app --port 8766`.
 
@@ -22,6 +22,7 @@ To test without touching the learner's progress, run a second server on a scratc
   - `server/curriculum.py`: the word ladder, known words and lesson writing.
   - `server/speech/`: phoneme recognition and text-to-speech.
   - `server/mcp_server.py`: exposes the progress log to any LLM.
+- `course/`: the audio-only course, a separate FastAPI app (port 8770). It reuses `server/` and serves `web/` at `/shared`. Claude writes lesson scripts to `data/course/`. The browser player (`course/web/player.js`) controls the recall timing.
 - `web/`: the browser front end. It's plain ES modules with no build step. `web/app.js` routes and runs the block; each page lives in `web/pages/<page>.js` with its own `.css`.
 - `tools/`: scripts that fetch and prepare content into `data/content/` ([schema](docs/content-schema.md)).
 - `data/`: ignored by git. Holds `content/`, `curriculum/` (word ladder and story bible), `media/`, `models/` (Hugging Face cache, set `HF_HOME=data/models`), `tts-cache/` and `app.db`.
