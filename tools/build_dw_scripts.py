@@ -7,7 +7,7 @@ Accepted text is replaced by the exact manuscript wording.
 
 Run:
   ANTHROPIC_API_KEY=op://mac-agents/mj6dyf42xml2ughfxqzpxey3zi/credential \
-    ~/best/stash/dotfiles/bin/op-agent run -- \
+    ~/best/areas/dotfiles/bin/op-agent run -- \
     uv run --with anthropic python -I tools/build_dw_scripts.py [mission-berlin|radio-d ...] [--force] [--only ID]
 
 Model replies are cached in data/raw/<series>/<id>.segments.json; --force redoes them.

@@ -36,7 +36,7 @@ Your progress is available to any LLM through the MCP server in `.mcp.json`.
 ## Run
 
 ```sh
-~/best/stash/dotfiles/bin/op-agent inject -i .env.tpl -o .env -f
+~/best/areas/dotfiles/bin/op-agent inject -i .env.tpl -o .env -f
 uv run uvicorn server.app:app --port 8765
 ```
 

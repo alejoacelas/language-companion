@@ -8,7 +8,7 @@ Scope: a local web app for learning German from zero in 15-minute blocks, built 
 ## Run
 
 ```sh
-~/best/stash/dotfiles/bin/op-agent inject -i .env.tpl -o .env -f
+~/best/areas/dotfiles/bin/op-agent inject -i .env.tpl -o .env -f
 uv run uvicorn server.app:app --port 8765
 ```
 
