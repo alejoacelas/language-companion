@@ -116,7 +116,7 @@ CHUNK_SECONDS = 600  # each upload stays well under the 25 MB API limit at 48 kb
 
 def _cut_points(path: Path, total: float) -> list[float]:
     """Cut near every CHUNK_SECONDS, at the middle of the nearest silence, so sentences are rarely split."""
-    out = subprocess.run(["ffmpeg", "-v", "info", "-i", str(path), "-af", "silencedetect=n=-30dB:d=0.3", "-f", "null", "-"],
+    out = subprocess.run(["ffmpeg", "-v", "info", "-i", str(path), "-vn", "-af", "silencedetect=n=-30dB:d=0.3", "-f", "null", "-"],
                          capture_output=True, text=True).stderr
     starts = [float(x) for x in re.findall(r"silence_start: ([\d.]+)", out)]
     ends = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", out)]
@@ -158,7 +158,7 @@ def transcribe_segments(path: Path) -> list[dict]:
         for i, (a, b) in enumerate(zip(bounds, bounds[1:])):
             out = Path(tmp) / f"{i}.mp3"
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(a), "-t", str(b - a), "-i", str(path),
-                            "-ac", "1", "-ar", "16000", "-b:a", "48k", str(out)], check=True)
+                            "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000", "-b:a", "48k", str(out)], check=True)
             chunks.append((a, out))
 
         def run(chunk):
