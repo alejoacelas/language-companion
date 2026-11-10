@@ -1,6 +1,6 @@
 #!/bin/sh
 # Start Sprachraum and open it in the browser.
 cd "$(dirname "$0")"
-[ -f .env ] || ~/best/areas/dotfiles/bin/op-agent inject -i .env.tpl -o .env -f
+[ -f .env ] || op --account my.1password.com inject -i .env.tpl -o .env -f
 (sleep 2 && open http://localhost:8790) &
 exec uv run uvicorn server.app:app --host 127.0.0.1 --port 8790
