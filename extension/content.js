@@ -117,7 +117,7 @@
   async function loadVideo(id) {
     flushWatch();
     closePopup(false);
-    video = { id, title: document.title, lines: null, statuses: new Map(), sentencesSent: false };
+    video = { id, title: document.title, lines: null, statuses: new Map(), glosses: new Map(), sentencesSent: false };
     watchSeconds = 0;
     shownIndex = null;
     renderLine();
@@ -177,8 +177,10 @@
     const i = v ? S.lineIndexAt(video.lines, v.currentTime) : -1;
     if (i === shownIndex) return;
     shownIndex = i;
+    hideTip();
     overlay.textContent = '';
     if (i < 0) return;
+    for (let k = i; k < i + 3; k++) glossesFor(k); // ready before the learner hovers
     overlay.dataset.index = i;
     const lineEl = document.createElement('div');
     lineEl.className = 'lc-line';
@@ -194,6 +196,68 @@
     overlay.append(lineEl);
   }
 
+  // ---------- hover meanings ----------
+  // Each line's words are translated in context ahead of time (one call per line, cached on the server).
+  function glossesFor(i) {
+    const v = video;
+    if (!v?.lines?.[i]) return Promise.resolve({});
+    if (!v.glosses.has(i)) {
+      const text = v.lines[i].text;
+      const words = S.tokenize(text).filter((p) => p.word).map((p) => p.text);
+      v.glosses.set(i, api('POST', '/api/glosses', { sentence: text, words }).then((r) => {
+        if (r?.ok) return r.data.glosses || {};
+        v.glosses.delete(i); // try again on the next hover
+        return {};
+      }));
+    }
+    return v.glosses.get(i);
+  }
+
+  const tip = document.createElement('div');
+  tip.className = 'lc-tip';
+  let tipFor = null;
+  let pausedForTip = false;
+
+  function showTip(wordEl) {
+    if (popup || tipFor === wordEl) return;
+    tipFor = wordEl;
+    const word = wordEl.textContent;
+    const i = +overlay.dataset.index;
+    // dictionary meaning straight away; the in-sentence meaning replaces it when it's ready
+    fillTip(null, video.statuses.get(word)?.gloss || '…');
+    mount(tip);
+    placePopup(tip, wordEl);
+    const v = videoEl();
+    if (v && !v.paused) { pause(); pausedForTip = true; }
+    glossesFor(i).then((g) => {
+      if (tipFor !== wordEl || !g[word]) return;
+      const d = g[word];
+      fillTip([d.article, d.lemma].filter(Boolean).join(' '), d.meaning);
+      placePopup(tip, wordEl);
+    });
+  }
+
+  function fillTip(head, meaning) {
+    tip.textContent = '';
+    if (head) tip.append(Object.assign(document.createElement('b'), { textContent: head }));
+    tip.append(Object.assign(document.createElement('span'), { textContent: meaning }));
+  }
+
+  function hideTip(resume = false) {
+    if (!tipFor) return;
+    tipFor = null;
+    tip.remove();
+    if (resume && pausedForTip && !popup) play();
+    pausedForTip = false;
+  }
+
+  overlay.addEventListener('mouseover', (e) => {
+    const w = e.target.closest('.lc-word');
+    if (w) showTip(w);
+    else hideTip(true);
+  });
+  overlay.addEventListener('mouseleave', () => hideTip(true));
+
   let noticeTimer;
   function notice(text) {
     const el = document.createElement('div');
@@ -207,7 +271,9 @@
 
   // ---------- word popup ----------
   function openPopup(wordEl, sentence) {
-    const pausedByUs = (popup?.pausedByUs || false) || !videoEl()?.paused;
+    const pausedByUs = (popup?.pausedByUs || false) || pausedForTip || !videoEl()?.paused;
+    pausedForTip = false;
+    hideTip();
     closePopup(false);
     if (!videoEl()?.paused) pause();
     const word = wordEl.textContent;

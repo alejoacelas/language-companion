@@ -2,6 +2,7 @@
 
 import json
 import re
+import threading
 import time
 from functools import lru_cache
 
@@ -132,3 +133,34 @@ def lookup(word: str, sentence: str, source: str, ref: str = "", title: str = ""
     return {"lemma": lem, "gloss": (w or {}).get("gloss", ""), "article": (w or {}).get("article") or "",
             "contextual": ctx.get("meaning", ""), "note": ctx.get("note", ""),
             "status": status(lem), "was": before, "card_added": bool(card)}
+
+
+SENTENCE_GLOSS = """German sentence: "{sentence}"
+For each word below, give its English meaning in this sentence (1-5 words), its dictionary form, and der/die/das if it's a noun.
+Words: {words}
+Return JSON only, keyed by the word exactly as listed:
+{{"<word>": {{"lemma": "dictionary form", "article": "der/die/das or empty", "meaning": "English, 1-5 words"}}}}"""
+
+_gloss_locks: dict[str, threading.Lock] = {}
+_gloss_locks_guard = threading.Lock()
+
+
+def sentence_glosses(sentence: str, toks: list[str]) -> dict:
+    """Meaning of each token in this sentence. One quick model call per sentence, then cached."""
+    toks = [t for t in dict.fromkeys(toks) if t][:40]
+    with _gloss_locks_guard:
+        lock = _gloss_locks.setdefault(sentence, threading.Lock())
+    with lock:  # the extension prefetches while the learner hovers; ask the model once
+        have = {r["word"]: json.loads(r["data"])
+                for r in db.q("SELECT word, data FROM sentence_glosses WHERE sentence=?", (sentence,))}
+        missing = [t for t in toks if t not in have]
+        if missing:
+            data = llm.ask_json(SENTENCE_GLOSS.format(sentence=sentence, words=", ".join(missing)),
+                                model=llm.FAST, max_tokens=2000)
+            for w in missing:
+                d = data.get(w) if isinstance(data, dict) else None
+                if isinstance(d, dict) and d.get("meaning"):
+                    db.x("INSERT OR REPLACE INTO sentence_glosses (sentence, word, data) VALUES (?,?,?)",
+                         (sentence, w, json.dumps(d, ensure_ascii=False)))
+                    have[w] = d
+    return {t: have[t] for t in toks if t in have}

@@ -179,6 +179,12 @@ def lookup(body: dict = Body(...)):
                         str(body.get("external_id", "")), body.get("title", ""))
 
 
+@app.post("/api/glosses")
+def glosses(body: dict = Body(...)):
+    """Meanings of the words in one sentence, for hover. Doesn't create cards."""
+    return {"glosses": words.sentence_glosses(body.get("sentence", "")[:500], body.get("words", []))}
+
+
 @app.post("/api/ignore")
 def ignore(body: dict = Body(...)):
     words.ignore(body["lemma"])

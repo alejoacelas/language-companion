@@ -126,6 +126,13 @@ CREATE TABLE IF NOT EXISTS practice (
   PRIMARY KEY (day, source)
 );
 
+-- meaning of each word in a given sentence, filled ahead of time so hovering is instant
+CREATE TABLE IF NOT EXISTS sentence_glosses (
+    sentence TEXT NOT NULL,
+    word TEXT NOT NULL,
+    data TEXT NOT NULL,
+    PRIMARY KEY (sentence, word)
+);
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT

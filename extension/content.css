@@ -1,7 +1,11 @@
-/* Hide the site's own captions while our overlay is active. */
+/* Hide the site's own captions while our overlay is active. Transparent, not display:none:
+   removing them from layout made YouTube blank the watch page and Netflix black out the video. */
 html.lc-active .ytp-caption-window-container,
+html.lc-active #ytp-caption-window-container,
+html.lc-active .caption-window,
 html.lc-active .player-timedtext {
-  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .lc-overlay {
@@ -86,3 +90,18 @@ html.lc-active .player-timedtext {
   font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   pointer-events: none;
 }
+
+.lc-tip {
+  position: absolute;
+  z-index: 2147483001;
+  max-width: 320px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #1d1d1f;
+  color: #fff;
+  font: 15px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.lc-tip b { font-weight: 600; margin-right: 8px; }

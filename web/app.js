@@ -298,9 +298,38 @@ async function openReader(id) {
     </div>
     <div class="reader"><div class="text" id="txt">${c.sentences.map((s, k) => `<div class="sent" data-i="${k}"><div class="de">${wrapWords(s.de)}</div>${s.en ? `<div class="en">${esc(s.en)}</div>` : ''}</div>`).join('')}
       <div class="row" style="padding:14px"><span class="spacer"></span><button class="btn primary" id="fin">I'm done</button></div></div>
-      <div class="card gloss" id="gloss"><h3>Click a word</h3><p class="muted small" style="margin:0">See what it means here. New words you click become cards.<br><br>Click a sentence to hear it. Space plays and pauses; ← and → move between sentences.</p></div></div>`;
+      <div class="card gloss" id="gloss"><h3>Hover a word</h3><p class="muted small" style="margin:0">Hover to see what it means in this sentence. Click it to make it a card and see more here.<br><br>Click a sentence to hear it. Space plays and pauses; ← and → move between sentences.</p></div></div>`;
   const podAudio = isPod ? new Audio(`/audio/${c.audio}`) : null;
+  // meanings in context, fetched a sentence or two ahead so hovering is instant
+  const glossCache = new Map();
+  const WORD = /[A-Za-zÄÖÜäöüß]+(?:[-'’][A-Za-zÄÖÜäöüß]+)*/g;
+  function glossesFor(k) {
+    const s = c.sentences[k];
+    if (!s) return Promise.resolve({});
+    if (!glossCache.has(k)) {
+      glossCache.set(k, post('/api/glosses', { sentence: s.de, words: s.de.match(WORD) || [] })
+        .then(r => r.glosses || {}).catch(() => { glossCache.delete(k); return {}; }));
+    }
+    return glossCache.get(k);
+  }
+  const tip = document.createElement('div'); tip.className = 'wtip';
+  let tipFor = null;
+  function showTip(el) {
+    if (tipFor === el) return;
+    tipFor = el;
+    const w = el.dataset.w, k = +el.closest('.sent').dataset.i;
+    const place = () => { const r = el.getBoundingClientRect(); tip.style.left = Math.max(8, Math.min(r.left + r.width / 2 - tip.offsetWidth / 2, innerWidth - tip.offsetWidth - 8)) + 'px'; tip.style.top = (r.top - tip.offsetHeight - 8) + 'px'; };
+    const fill = (head, meaning) => { tip.innerHTML = `${head ? `<b>${esc(head)}</b>` : ''}<span>${esc(meaning)}</span>`; place(); };
+    document.body.append(tip);
+    fill(null, c.tokens[w]?.gloss || '…');
+    glossesFor(k).then(g => { if (tipFor === el && g[w]) fill([g[w].article, g[w].lemma].filter(Boolean).join(' '), g[w].meaning); });
+  }
+  function hideTip() { tipFor = null; tip.remove(); }
+  $('#txt').addEventListener('mouseover', e => { const el = e.target.closest('.w'); el ? showTip(el) : hideTip(); });
+  $('#txt').addEventListener('mouseleave', hideTip);
+  addEventListener('scroll', hideTip, { passive: true });
   function mark() {
+    for (let k = cur; k < cur + 3; k++) glossesFor(k);
     $$('.sent').forEach(el => el.classList.toggle('cur', +el.dataset.i === cur));
     const el = $(`.sent[data-i="${cur}"]`); el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     $('#pp').innerHTML = playing ? '❚❚ Pause <kbd>Space</kbd>' : '▶ Play <kbd>Space</kbd>';
@@ -382,7 +411,7 @@ async function openReader(id) {
     else if (e.key === 'Escape') { pause(); go('listen'); }
   }
   document.addEventListener('keydown', key);
-  cleanup = () => { document.removeEventListener('keydown', key); pause(); };
+  cleanup = () => { document.removeEventListener('keydown', key); removeEventListener('scroll', hideTip); hideTip(); pause(); };
   mark();
 }
 
