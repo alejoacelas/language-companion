@@ -1,27 +1,46 @@
 {
   "manifest_version": 3,
   "name": "Language Companion",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "description": "German subtitles on YouTube and Netflix, coloured by what you know, feeding your local Language Companion app.",
-  "permissions": ["storage"],
-  "host_permissions": [
-    "http://localhost:8790/*",
-    "https://*.nflxvideo.net/*",
-    "https://*.nflxso.net/*"
+  "permissions": [
+    "storage",
+    "alarms"
   ],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html", "default_title": "Language Companion" },
+  "host_permissions": [
+    "http://localhost:8790/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Language Companion"
+  },
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/*", "https://www.netflix.com/*"],
-      "js": ["page_hook.js"],
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://www.netflix.com/*"
+      ],
+      "js": [
+        "page_hook.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
-      "matches": ["https://www.youtube.com/*", "https://www.netflix.com/*"],
-      "js": ["subs.js", "content.js"],
-      "css": ["content.css"],
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://www.netflix.com/*"
+      ],
+      "js": [
+        "subs.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
       "run_at": "document_idle"
     }
   ]

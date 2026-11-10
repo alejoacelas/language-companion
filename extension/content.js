@@ -11,7 +11,6 @@
   let lastTick = performance.now();
   let shownIndex = null;
   let popup = null; // {el, pausedByUs}
-  const nfTracks = {}; // Netflix movieId -> timedtexttracks
   const ytUrls = {}; // YouTube videoId -> timedtext URL captured from the player
   const waiters = new Set();
 
@@ -42,7 +41,6 @@
   window.addEventListener('message', (e) => {
     const d = e.data;
     if (e.source !== window || !d || d.source !== 'lc-hook') return;
-    if (d.type === 'nf-tracks') nfTracks[d.movieId] = d.tracks;
     if (d.type === 'yt-timedtext-url') ytUrls[d.videoId] = d.url;
     for (const w of waiters) if (w.match(d)) { waiters.delete(w); w.resolve(d); }
   });
@@ -74,11 +72,6 @@
   }
 
   async function fetchText(url) {
-    if (SITE === 'netflix') {
-      const r = await new Promise((res) => chrome.runtime.sendMessage({ type: 'fetchText', url }, res));
-      if (!r?.ok) throw new Error(r?.error || 'subtitle fetch failed');
-      return r.text;
-    }
     const r = await fetch(url, { credentials: 'include' });
     return r.ok ? r.text() : '';
   }
@@ -110,17 +103,15 @@
     return text;
   }
 
-  async function loadNetflix(id) {
+  async function loadNetflix() {
     video.title = document.querySelector('[data-uia="video-title"]')?.innerText.replace(/\n/g, ' ') || document.title;
-    let tracks = nfTracks[id];
-    if (!tracks) {
-      const got = waitForHook((d) => d.type === 'nf-tracks' && d.movieId === id, 20000);
-      toHook({ type: 'nf-get-tracks', movieId: id });
-      tracks = (await got)?.tracks;
-    }
-    if (!tracks) throw new Error('Netflix subtitle list not captured; reload the page');
-    const pick = S.pickNetflixTrack(tracks);
-    return pick ? fetchText(pick.url) : null;
+    const reqId = Math.random().toString(36).slice(2);
+    const got = waitForHook((d) => d.type === 'nf-subs' && d.reqId === reqId, 25000);
+    toHook({ type: 'nf-get-subs', reqId });
+    const r = await got;
+    if (!r || r.error) throw new Error((r && r.error) || 'Netflix player not ready; reload the page');
+    if (r.title) video.title = r.title;
+    return r.text; // null when the title has no German subtitles
   }
 
   async function loadVideo(id) {
@@ -220,6 +211,7 @@
     closePopup(false);
     if (!videoEl()?.paused) pause();
     const word = wordEl.textContent;
+    const wordIndex = [...overlay.querySelectorAll('.lc-word')].indexOf(wordEl);
     const el = document.createElement('div');
     el.className = 'lc-popup';
     for (const t of ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'dblclick']) {
@@ -243,7 +235,7 @@
       el.querySelector('.lc-head').textContent = [d.article, d.lemma || word].filter(Boolean).join(' ');
       body.textContent = '';
       for (const [cls, text] of [['lc-gloss', d.gloss], ['lc-contextual', d.contextual], ['lc-grammar', d.note]]) {
-        if (!text) continue;
+        if (!text || (cls === 'lc-contextual' && text === d.gloss)) continue;
         const p = document.createElement('div');
         p.className = cls;
         p.textContent = text;
@@ -254,14 +246,17 @@
       btn.addEventListener('click', () => ignore(d.lemma || word));
       body.append(btn);
       setStatus((tok, info) => tok === word, { lemma: d.lemma, status: d.status, gloss: d.gloss });
-      placePopup(el, wordEl);
+      // setStatus redraws the line, so measure from the redrawn copy of the word.
+      const redrawn = overlay.querySelectorAll('.lc-word')[wordIndex];
+      placePopup(el, redrawn?.textContent === word ? redrawn : wordEl);
     });
   }
 
   function placePopup(el, wordEl) {
     const c = el.parentElement;
     if (!c) return;
-    const cr = c.getBoundingClientRect();
+    // Measure from the element the popup is actually positioned against (not always the player box).
+    const cr = (el.offsetParent || c).getBoundingClientRect();
     const wr = wordEl.getBoundingClientRect();
     const left = Math.min(Math.max(wr.left - cr.left + wr.width / 2 - el.offsetWidth / 2, 8), cr.width - el.offsetWidth - 8);
     el.style.left = left + 'px';

@@ -201,8 +201,11 @@ def record_watch(source: str, ext_id: str, title: str, url: str, seconds: float,
         db.x("INSERT INTO content (kind, title, url, external_id, sentences, created_ts) VALUES (?,?,?,?,?,?)",
              (source, title or ext_id, url, ext_id, json.dumps(sentences or [], ensure_ascii=False), time.time()))
         db.log("watch", f'Started watching "{title}" on {source.capitalize()}', source)
-    elif sentences and row["sentences"] in ("[]", None):
-        db.x("UPDATE content SET sentences=? WHERE id=?", (json.dumps(sentences, ensure_ascii=False), row["id"]))
+    else:
+        if title:
+            db.x("UPDATE content SET title=? WHERE id=?", (title, row["id"]))
+        if sentences and row["sentences"] in ("[]", None):
+            db.x("UPDATE content SET sentences=? WHERE id=?", (json.dumps(sentences, ensure_ascii=False), row["id"]))
     if seconds:
         db.add_practice(source, seconds)
         db.x("UPDATE content SET progress = progress + ? WHERE kind=? AND external_id=?", (int(seconds), source, ext_id))

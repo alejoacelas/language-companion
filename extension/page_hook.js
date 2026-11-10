@@ -1,7 +1,7 @@
 // Runs in the page's main world at document_start. Talks to content.js via window.postMessage.
 // YouTube: reads the player response, captures the player's own timedtext URLs (they carry the
 // "pot" token YouTube now requires), turns captions on when asked, seeks.
-// Netflix: asks the manifest for WebVTT/DFXP subtitles, captures timedtexttracks, controls the player.
+// Netflix: keeps the subtitle files the player downloads, selects German, controls the player.
 (() => {
   const post = (msg) => window.postMessage({ source: 'lc-hook', ...msg }, '*');
   const isNetflix = location.hostname.includes('netflix');
@@ -63,33 +63,9 @@
   }
 
   // ---- Netflix ----
-  const manifests = {}; // movieId -> timedtexttracks
-
-  const stringify = JSON.stringify;
-  JSON.stringify = function (value) {
-    try {
-      const params = value && value.params;
-      if (params && Array.isArray(params.profiles)) {
-        for (const p of ['webvtt-lssdh-ios8', 'dfxp-ls-sdh']) if (!params.profiles.includes(p)) params.profiles.push(p);
-        params.showAllSubDubTracks = true;
-      }
-    } catch {}
-    return stringify.apply(this, arguments);
-  };
-
-  const parse = JSON.parse;
-  JSON.parse = function () {
-    const value = parse.apply(this, arguments);
-    try {
-      const m = value && (value.result && value.result.timedtexttracks ? value.result : value.timedtexttracks ? value : null);
-      if (m && m.movieId) {
-        const movieId = String(m.movieId);
-        manifests[movieId] = m.timedtexttracks;
-        post({ type: 'nf-tracks', movieId, tracks: m.timedtexttracks });
-      }
-    } catch {}
-    return value;
-  };
+  // Netflix downloads a whole subtitle file (TTML or WebVTT) the first time a text track is
+  // selected. We keep every file it fetches and select the German track ourselves.
+  const files = []; // {movieId, lang, text}
 
   function nfPlayer() {
     const vp = window.netflix?.appContext?.state?.playerApp?.getAPI?.()?.videoPlayer;
@@ -97,17 +73,75 @@
     return ids.length ? vp.getVideoPlayerBySessionId(ids[ids.length - 1]) : null;
   }
 
+  const send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.send = function () {
+    this.addEventListener('load', () => {
+      try {
+        let text = null;
+        if (this.responseType === '' || this.responseType === 'text') text = this.responseText;
+        else if (this.responseType === 'arraybuffer' && this.response.byteLength < 5e6) {
+          text = new TextDecoder().decode(new Uint8Array(this.response));
+        }
+        const head = text ? text.slice(0, 3000) : '';
+        if (!/<tt[\s>]|^WEBVTT/.test(head)) return;
+        const p = nfPlayer();
+        const lang = (head.match(/xml:lang="([^"]+)"/) || [])[1] || p?.getTimedTextTrack?.()?.bcp47 || '';
+        files.push({ movieId: String(p?.getMovieId?.() || ''), lang, text });
+      } catch {}
+    });
+    return send.apply(this, arguments);
+  };
+
+  // The full German file for this movie. Forced-narrative files are German too but tiny; take the largest.
+  function germanFile(movieId) {
+    const de = files.filter((f) => f.movieId === movieId && f.lang.toLowerCase().startsWith('de'));
+    return de.sort((a, b) => b.text.length - a.text.length)[0] || null;
+  }
+
+  // "Dark S1E1: Secrets" for an episode, the plain title for a film.
+  function nfTitle(movieId) {
+    try {
+      const v = window.netflix.appContext.state.playerApp.getState().videoPlayer.videoMetadata[movieId]._metadataObject.video;
+      for (const season of v.seasons || []) {
+        for (const ep of season.episodes || []) {
+          if (String(ep.id || ep.episodeId) === movieId) return `${v.title} S${season.seq}E${ep.seq}: ${ep.title}`;
+        }
+      }
+      return v.title || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function getSubs(reqId) {
+    let asked = false;
+    for (let i = 0; i < 50; i++) {
+      const p = nfPlayer();
+      const movieId = String(p?.getMovieId?.() || '');
+      const tracks = p?.getTimedTextTrackList?.() || [];
+      if (movieId && tracks.length) {
+        const de = tracks.filter((t) => t.bcp47?.toLowerCase().startsWith('de') && !t.isForcedNarrative && !t.isNoneTrack);
+        if (!de.length) return post({ type: 'nf-subs', reqId, movieId, title: nfTitle(movieId), text: null });
+        const got = germanFile(movieId);
+        if (got && got.text.length > 5000) return post({ type: 'nf-subs', reqId, movieId, title: nfTitle(movieId), text: got.text });
+        if (!asked) {
+          // Regular German subtitles if offered, else German closed captions (e.g. German originals).
+          const pick = de.find((t) => t.trackType === 'PRIMARY') || de[0];
+          if (p.getTimedTextTrack?.()?.trackId !== pick.trackId) p.setTimedTextTrack(pick);
+          asked = true;
+        }
+      }
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    post({ type: 'nf-subs', reqId, error: 'Netflix did not load its German subtitle file' });
+  }
+
   window.addEventListener('message', (e) => {
     const d = e.data;
     if (e.source !== window || !d || d.source !== 'lc-content') return;
-    if (d.type === 'nf-get-tracks' && manifests[d.movieId]) {
-      post({ type: 'nf-tracks', movieId: d.movieId, tracks: manifests[d.movieId] });
-    } else if (d.type === 'nf-seek') {
-      nfPlayer()?.seek(Math.round(d.seconds * 1000));
-    } else if (d.type === 'nf-pause') {
-      nfPlayer()?.pause();
-    } else if (d.type === 'nf-play') {
-      nfPlayer()?.play();
-    }
+    if (d.type === 'nf-get-subs') getSubs(d.reqId);
+    else if (d.type === 'nf-seek') nfPlayer()?.seek(Math.round(d.seconds * 1000));
+    else if (d.type === 'nf-pause') nfPlayer()?.pause();
+    else if (d.type === 'nf-play') nfPlayer()?.play();
   });
 })();

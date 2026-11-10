@@ -22,9 +22,15 @@ def ask(user: str, system: str = "", model: str = SMART, max_tokens: int = 4000,
         messages: list | None = None) -> str:
     msgs = messages if messages is not None else [{"role": "user", "content": user}]
     kw = {"system": system} if system else {}
+    if model == FAST:
+        # quick lookups: thinking would spend the small token budget before any answer
+        kw["thinking"] = {"type": "disabled"}
     with client().messages.stream(model=model, max_tokens=max_tokens, messages=msgs, **kw) as s:
         r = s.get_final_message()
-    return "".join(b.text for b in r.content if b.type == "text")
+    text = "".join(b.text for b in r.content if b.type == "text")
+    if r.stop_reason == "max_tokens" and not text.strip():
+        raise RuntimeError(f"{model} used all {max_tokens} tokens before answering")
+    return text
 
 
 def ask_json(user: str, system: str = "", model: str = SMART, max_tokens: int = 4000,

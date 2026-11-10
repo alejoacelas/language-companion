@@ -1,16 +1,10 @@
-// All network calls to the local server (and Netflix subtitle files) go through here:
+// All network calls to the local server go through here:
 // content scripts on https pages cannot reach http://localhost themselves.
 const BASE = 'http://localhost:8790';
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === 'api' && typeof msg.path === 'string' && msg.path.startsWith('/api/')) {
     callApi(msg.method || 'GET', msg.path, msg.body).then(sendResponse);
-    return true;
-  }
-  if (msg?.type === 'fetchText' && isSubtitleHost(msg.url)) {
-    fetch(msg.url)
-      .then(async (r) => sendResponse(r.ok ? { ok: true, text: await r.text() } : { ok: false, error: `HTTP ${r.status}` }))
-      .catch((err) => sendResponse({ ok: false, error: String(err) }));
     return true;
   }
 });
@@ -29,11 +23,12 @@ async function callApi(method, path, body) {
   }
 }
 
-function isSubtitleHost(url) {
+// Unpacked install: reload when the files on disk get a new version, so updates need no click.
+chrome.alarms.create('check-update', { periodInMinutes: 0.5 });
+chrome.alarms.onAlarm.addListener(async (a) => {
+  if (a.name !== 'check-update') return;
   try {
-    const host = new URL(url).hostname;
-    return host.endsWith('.nflxvideo.net') || host.endsWith('.nflxso.net');
-  } catch {
-    return false;
-  }
-}
+    const disk = await (await fetch(chrome.runtime.getURL('manifest.json'), { cache: 'no-store' })).json();
+    if (disk.version !== chrome.runtime.getManifest().version) chrome.runtime.reload();
+  } catch {}
+});
