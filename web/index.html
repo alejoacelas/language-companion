@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprachraum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232f6f5e'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='Georgia'>S</text></svg>">
+</head>
+<body>
+<div class="app">
+  <nav id="nav">
+    <div class="brand"><span class="logo">S</span>Sprachraum</div>
+    <button data-view="today">Today <kbd>1</kbd></button>
+    <button data-view="review">Review <span class="count" id="dueCount"></span><kbd>2</kbd></button>
+    <button data-view="listen">Listen &amp; read <kbd>3</kbd></button>
+    <button data-view="speak">Speak <kbd>4</kbd></button>
+    <button data-view="tutor">Tutor <kbd>5</kbd></button>
+    <button data-view="me">Progress <kbd>6</kbd></button>
+    <div class="nav-foot" id="navFoot"></div>
+  </nav>
+  <main id="main"></main>
+</div>
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

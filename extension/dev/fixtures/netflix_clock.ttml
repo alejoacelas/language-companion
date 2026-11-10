@@ -1,0 +1,5 @@
+<tt xmlns="http://www.w3.org/ns/ttml" ttp:frameRate="25" xmlns:ttp="http://www.w3.org/ns/ttml#parameter"><body><div>
+<p begin="00:00:01.500" end="00:00:03.000">Erste Zeile</p>
+<p begin="00:00:04:00" end="00:00:05:12">Zweite Zeile</p>
+<p begin="6s" end="7500ms">Dritte Zeile</p>
+</div></body></tt>

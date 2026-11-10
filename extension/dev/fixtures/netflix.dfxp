@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns:tts="http://www.w3.org/ns/ttml#styling" ttp:tickRate="10000000" ttp:timeBase="media" xml:lang="de">
+<head><styling><style xml:id="s1" tts:color="white"/></styling></head>
+<body><div>
+<p begin="10010000t" end="35030000t" region="region_00" style="s1" xml:id="subtitle0">Wo warst du<br/>gestern Abend?</p>
+<p begin="36000000t" end="52000000t" region="region_00" xml:id="subtitle1"><span style="s2">Ich war bei </span><span tts:fontStyle="italic">meiner Oma</span>.</p>
+<p begin="60000000t" dur="15000000t" xml:id="subtitle2">Tom &amp; Jerry sind &lt;nie&gt; müde.</p>
+</div></body></tt>

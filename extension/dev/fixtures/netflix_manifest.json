@@ -1,0 +1,7 @@
+{"result":{"movieId":81234567,"timedtexttracks":[
+{"language":"en","rawTrackType":"subtitles","isNoneTrack":false,"isForcedNarrative":false,"ttDownloadables":{"webvtt-lssdh-ios8":{"urls":[{"cdn_id":1,"url":"https://ipv4-c001.1.nflxvideo.net/en.vtt"}]}}},
+{"language":"de","rawTrackType":"subtitles","isNoneTrack":false,"isForcedNarrative":true,"ttDownloadables":{"webvtt-lssdh-ios8":{"urls":[{"url":"https://ipv4-c001.1.nflxvideo.net/de-forced.vtt"}]}}},
+{"language":"de","rawTrackType":"closedcaptions","isNoneTrack":false,"isForcedNarrative":false,"ttDownloadables":{"webvtt-lssdh-ios8":{"urls":[{"url":"https://ipv4-c001.1.nflxvideo.net/de-cc.vtt"}]}}},
+{"language":"de","rawTrackType":"subtitles","isNoneTrack":false,"isForcedNarrative":false,"ttDownloadables":{"dfxp-ls-sdh":{"downloadUrls":{"42":"https://ipv4-c002.1.nflxvideo.net/de.dfxp"}},"webvtt-lssdh-ios8":{"downloadUrls":{"42":"https://ipv4-c002.1.nflxvideo.net/de.vtt"}}}},
+{"language":"","rawTrackType":"subtitles","isNoneTrack":true,"ttDownloadables":{}}
+]}}
