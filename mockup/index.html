@@ -149,10 +149,18 @@ th{color:var(--muted);font-weight:500;border-top:0}
   <div class="modal">
     <h3 style="margin:0 0 4px">German tutors free now</h3>
     <p class="muted small" style="margin:0 0 8px">Booked through italki Instant Lesson. The lesson is captured by <span id="capName">Granola</span> and lands in Tutor lessons when it ends.</p>
-    <div class="tutor"><div><b>Jonas K.</b> · Berlin · conversation, corrects a lot<br><span class="muted small">€18 / 30 min · 412 lessons · you've had 3</span></div><button class="btn primary" data-book="Jonas">Start</button></div>
-    <div class="tutor"><div><b>Miriam S.</b> · Vienna · patient with beginners<br><span class="muted small">€15 / 30 min · 1,208 lessons</span></div><button class="btn" data-book="Miriam">Start</button></div>
-    <div class="tutor"><div><b>Felix W.</b> · Hamburg · exam prep, grammar<br><span class="muted small">€21 / 30 min · 233 lessons</span></div><button class="btn" data-book="Felix">Start</button></div>
+    <div class="tutor"><div><b>Jonas K.</b> · Berlin · conversation, corrects a lot<br><span class="muted small">€18 / 30 min · 412 lessons · you've had 3</span></div><div class="row"><button class="btn" data-brief="Jonas">Brief</button><button class="btn primary" data-book="Jonas">Start</button></div></div>
+    <div class="tutor"><div><b>Miriam S.</b> · Vienna · patient with beginners<br><span class="muted small">€15 / 30 min · 1,208 lessons</span></div><div class="row"><button class="btn" data-brief="Miriam">Brief</button><button class="btn" data-book="Miriam">Start</button></div></div>
+    <div class="tutor"><div><b>Felix W.</b> · Hamburg · exam prep, grammar<br><span class="muted small">€21 / 30 min · 233 lessons</span></div><div class="row"><button class="btn" data-brief="Felix">Brief</button><button class="btn" data-book="Felix">Start</button></div></div>
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="closeTutor">Close <kbd>Esc</kbd></button></div>
+  </div>
+</div>
+<div class="overlay" id="briefOverlay">
+  <div class="modal" style="width:min(560px,94vw)">
+    <h3 style="margin:0 0 4px" id="briefTitle">Brief</h3>
+    <p class="muted small" style="margin:0 0 8px">Written from your cards, errors and past lessons with this tutor. Edit it, then copy it into italki chat.</p>
+    <textarea id="briefText" style="width:100%;height:260px;font-family:inherit;font-size:14px;line-height:1.5;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"></textarea>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn" id="closeBrief">Close <kbd>Esc</kbd></button><button class="btn primary" id="copyBrief">Copy <kbd>⌘↵</kbd></button></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -207,6 +215,28 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show'
 // ---------- views ----------
 const undone=new Set(); let selWord=null, view='today', inputTab='made', openItem=null, recording=false, chatStep=0, openLesson=null, playing=false, curPara=0;
 const V = {};
+const BRIEFS = {
+  Jonas: `Hallo Jonas! Quick update since our lesson on 9 Nov:
+
+- I've been drilling "sein" with motion verbs (bin gegangen, bin gefahren). I still slip about 1 time in 3. Could you get me talking about trips or my weekend so it comes up a lot?
+- Noun genders are my most common mistake (das Popcorn last time). Please keep correcting them.
+- New since last time: about 40 words, mostly from home and shopping (Schlüssel, Wohnung, Tasche).
+
+Same as before: let me try to fix a mistake myself first, then say the correct version clearly once. I record with Granola for my flashcards, as we agreed. Danke!`,
+  Miriam: `Hallo Miriam! I'm a beginner learning German from scratch (native Spanish, fluent English), about 600 words in.
+
+How you can help me most:
+1. Correct every mistake, even articles and endings.
+2. Give me a moment to fix it myself first, then say the correct version clearly once.
+3. Speak slowly, in simple German; English only when I'm stuck.
+4. At the end, name 2–3 things to practise.
+
+What I'm working on now: "sein" with motion verbs, word order after time phrases, noun genders.
+
+I'd like to record our lesson with Granola, a note-taking app, so I can make flashcards from it. Only I see the transcript. Is that OK with you? Danke!`,
+};
+BRIEFS.Felix = BRIEFS.Miriam.replace('Hallo Miriam','Hallo Felix');
+
 
 V.today = () => {
   const due = DB.cards.length - DB.cardIdx;
@@ -404,6 +434,7 @@ function render(){
 }
 function go(v){ if(v==='tutor'){openTutor();return} view=v; openItem=null; openLesson=null; render(); }
 function openTutor(){ $('#capName').textContent = DB.cap==='granola'?'Granola':'the built-in recorder'; $('#tutorOverlay').classList.add('show'); }
+function copyBrief(){ const v=$('#briefText').value; (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).catch(()=>{$('#briefText').select();document.execCommand('copy')}); $('#briefOverlay').classList.remove('show'); toast('Brief copied. Paste it in the italki chat.'); log('lesson','Copied brief for '+$('#briefTitle').textContent.replace('Brief for ','')); }
 function closeTutor(){ $('#tutorOverlay').classList.remove('show'); }
 function grade(g){
   const c=DB.cards[DB.cardIdx]; const names={1:'Again',2:'Hard',3:'Good',4:'Easy'};
@@ -420,7 +451,7 @@ function speakStep(){
   render();
 }
 document.addEventListener('click', e=>{
-  const t=e.target.closest('[data-view],[data-go],[data-reveal],[data-grade],[data-tab],[data-open],[data-back],[data-word],[data-play],[data-gen],[data-lesson],[data-undo],[data-tutor],[data-book],[data-say],[data-untrack],#closeTutor,#mic,[data-resetchat]');
+  const t=e.target.closest('[data-view],[data-go],[data-reveal],[data-grade],[data-tab],[data-open],[data-back],[data-word],[data-play],[data-gen],[data-lesson],[data-undo],[data-tutor],[data-book],[data-say],[data-untrack],[data-brief],#closeBrief,#copyBrief,#closeTutor,#mic,[data-resetchat]');
   if(!t) { if(e.target.id==='tutorOverlay') closeTutor(); return; }
   if(t.tagName==='A') e.preventDefault();
   const d=t.dataset;
@@ -445,6 +476,9 @@ document.addEventListener('click', e=>{
   else if('tutor' in d) openTutor();
   else if(d.book){ closeTutor(); toast(`Opening italki classroom with ${d.book}… ${DB.cap==='granola'?'Granola':'Recorder'} starts capturing.`); log('lesson',`Started instant lesson with ${d.book}`); DB.plan[3].done=true; }
   else if(t.id==='closeTutor') closeTutor();
+  else if(d.brief){ $('#briefTitle').textContent='Brief for '+d.brief; $('#briefText').value=BRIEFS[d.brief]; $('#briefOverlay').classList.add('show'); }
+  else if(t.id==='closeBrief') $('#briefOverlay').classList.remove('show');
+  else if(t.id==='copyBrief'){ copyBrief(); }
   else if(t.id==='mic'){ speakStep(); }
   else if('resetchat' in d){ chatStep=0; render(); }
 });
@@ -452,6 +486,7 @@ document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('cha
 document.querySelectorAll('input[name=cap]').forEach(r=>r.addEventListener('change',()=>{r.blur(); DB.cap=r.value; log('settings','Lesson capture: '+r.value); render(); toast('Lesson capture: '+(r.value==='granola'?'Granola':'built-in recorder'));}));
 
 document.addEventListener('keydown', e=>{
+  if($('#briefOverlay').classList.contains('show')){ if(e.key==='Escape') $('#briefOverlay').classList.remove('show'); if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault(); copyBrief();} return; }
   if(e.target.matches('input[type=text],textarea')) return;
   if($('#tutorOverlay').classList.contains('show')){ if(e.key==='Escape') closeTutor(); return; }
   if(e.key==='Escape' && (openItem||openLesson)){ openItem=null; openLesson=null; render(); return; }
