@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprachraum mockup</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --ink:#1d1d1f; --muted:#6b6b70; --line:#e4e2dc;
+  --accent:#2f6f5e; --accent-soft:#e3efea; --warn:#b5651d; --warn-soft:#f6eadf;
+  --new:#c9e4ff; --learning:#fff1b8; --known:transparent; --bad:#b3261e; --bad-soft:#f8e1df;
+  --ext:#5b4bb7; --ext-soft:#ebe8f8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17181a; --panel:#202124; --ink:#ececec; --muted:#9a9aa0; --line:#33343a;
+    --accent:#6cc3a8; --accent-soft:#1f3a33; --warn:#e3a066; --warn-soft:#3a2b1d;
+    --new:#1d3d5c; --learning:#4a4120; --bad:#f08b83; --bad-soft:#3d2321;
+    --ext:#a99cf0; --ext-soft:#2b2747;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+.app{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+nav{border-right:1px solid var(--line);padding:18px 12px;background:var(--panel)}
+nav .brand{font-weight:700;font-size:17px;padding:4px 10px 16px}
+nav button{display:flex;justify-content:space-between;width:100%;text-align:left;border:0;background:none;color:var(--ink);padding:8px 10px;border-radius:8px;font:inherit;cursor:pointer}
+nav button:hover{background:var(--bg)}
+nav button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+nav kbd{opacity:.6}
+nav .sep{height:1px;background:var(--line);margin:12px 6px}
+.mode{margin:6px 4px;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:13px}
+.mode label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:4px 0}
+main{padding:24px 32px 60px;max-width:1100px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{margin:0 0 8px;font-size:15px}
+.big{font-size:28px;font-weight:700}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;border-radius:8px;font:inherit;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.ext{border-color:var(--ext);color:var(--ext)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.tag.ext{background:var(--ext-soft);border-color:transparent;color:var(--ext)}
+.tag.acc{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.tag.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+kbd{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--panel)}
+.feed{list-style:none;padding:0;margin:0}
+.feed li{padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.feed li:first-child{border-top:0}
+.plan li{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.done{text-decoration:line-through;color:var(--muted)}
+/* review */
+.rev{max-width:640px;margin:20px auto;text-align:center}
+.rev .front{font-size:26px;margin:30px 0 10px}
+.rev .blank{border-bottom:2px solid var(--accent);padding:0 30px}
+.rev .back{font-size:20px;margin:10px 0;color:var(--accent);min-height:30px}
+.grades{display:flex;gap:8px;justify-content:center;margin-top:20px}
+.grades .btn{min-width:110px}
+.progressbar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 0}
+.progressbar div{height:100%;background:var(--accent)}
+/* reader */
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:5px 12px;cursor:pointer;font:inherit;font-size:14px}
+.tabs button.on{background:var(--ink);color:var(--bg)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.item{cursor:pointer}
+.item:hover{border-color:var(--accent)}
+.thumb{height:90px;border-radius:8px;margin:-4px -4px 10px;display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--bg)}
+.reader{display:grid;grid-template-columns:1fr 280px;gap:16px}
+.player{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.video{aspect-ratio:16/9;background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#888;margin-bottom:12px;font-size:14px}
+.text p{font-size:19px;line-height:1.9;margin:0 0 6px;padding:4px 8px;border-radius:8px}
+.text p.cur{background:var(--accent-soft)}
+.w{cursor:pointer;border-radius:4px;padding:1px 1px}
+.w.new{background:var(--new)}
+.w.learning{background:var(--learning)}
+.w:hover{outline:2px solid var(--accent)}
+.legend span{display:inline-block;padding:0 6px;border-radius:4px;margin-right:6px}
+.gloss{position:sticky;top:20px}
+/* speak */
+.chat{display:flex;flex-direction:column;gap:10px;max-height:58vh;overflow:auto;padding-right:6px}
+.msg{max-width:78%;padding:10px 14px;border-radius:14px;font-size:16px}
+.msg.ai{background:var(--panel);border:1px solid var(--line);align-self:flex-start}
+.msg.me{background:var(--accent);color:#fff;align-self:flex-end}
+.msg .fix{display:block;font-size:13px;margin-top:6px;color:var(--warn)}
+.msg.me .err{text-decoration:underline wavy #ffd5a8}
+.mic{width:64px;height:64px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:24px;cursor:pointer}
+.mic.rec{background:var(--bad);animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.speak{display:grid;grid-template-columns:1fr 280px;gap:16px}
+/* lessons */
+.lesson{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.tline{font-size:15px;padding:6px 0;border-top:1px solid var(--line)}
+.tline .who{display:inline-block;width:62px;color:var(--muted);font-weight:600}
+.tline.me .who{color:var(--accent)}
+.extract li{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.undo{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;text-decoration:underline}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:7px 6px;border-top:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:500;border-top:0}
+.log{font:12.5px ui-monospace,Menlo,monospace;max-height:300px;overflow:auto}
+.log div{padding:3px 0;border-top:1px dashed var(--line)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;max-width:360px}
+.toast.show{opacity:1}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:5}
+.overlay.show{display:flex}
+.modal{background:var(--panel);border-radius:14px;padding:20px;width:min(460px,92vw)}
+.tutor{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.note{border-left:3px solid var(--ext);padding:6px 10px;background:var(--ext-soft);border-radius:0 8px 8px 0;font-size:13px;margin:10px 0}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr} nav{border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:16px} .reader,.speak,.lesson{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<nav>
+  <div class="brand">Sprachraum <span class="tag">mockup</span></div>
+  <button data-view="today" class="on">Today <kbd>1</kbd></button>
+  <button data-view="review">Review <kbd>2</kbd></button>
+  <button data-view="input">Listen &amp; read <kbd>3</kbd></button>
+  <button data-view="speak">Speak with AI <kbd>4</kbd></button>
+  <button data-view="lessons">Tutor lessons <kbd>5</kbd></button>
+  <button data-view="me">What I know <kbd>6</kbd></button>
+  <div class="sep"></div>
+  <div class="mode">
+    <div class="muted small" style="margin-bottom:4px">Input sources</div>
+    <label><input type="radio" name="mode" value="owned" checked> <span>App content only<br><span class="muted small">stories, podcasts, articles</span></span></label>
+    <label><input type="radio" name="mode" value="ext"> <span>Plus YouTube &amp; Netflix<br><span class="muted small">via browser extension</span></span></label>
+  </div>
+  <div class="mode">
+    <div class="muted small" style="margin-bottom:4px">Lesson capture</div>
+    <label><input type="radio" name="cap" value="granola" checked> <span>Granola</span></label>
+    <label><input type="radio" name="cap" value="builtin"> <span>Built-in recorder</span></label>
+  </div>
+</nav>
+<main id="main"></main>
+</div>
+
+<div class="overlay" id="tutorOverlay">
+  <div class="modal">
+    <h3 style="margin:0 0 4px">German tutors free now</h3>
+    <p class="muted small" style="margin:0 0 8px">Booked through italki Instant Lesson. The lesson is captured by <span id="capName">Granola</span> and lands in Tutor lessons when it ends.</p>
+    <div class="tutor"><div><b>Jonas K.</b> · Berlin · conversation, corrects a lot<br><span class="muted small">€18 / 30 min · 412 lessons · you've had 3</span></div><button class="btn primary" data-book="Jonas">Start</button></div>
+    <div class="tutor"><div><b>Miriam S.</b> · Vienna · patient with beginners<br><span class="muted small">€15 / 30 min · 1,208 lessons</span></div><button class="btn" data-book="Miriam">Start</button></div>
+    <div class="tutor"><div><b>Felix W.</b> · Hamburg · exam prep, grammar<br><span class="muted small">€21 / 30 min · 233 lessons</span></div><button class="btn" data-book="Felix">Start</button></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="closeTutor">Close <kbd>Esc</kbd></button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- fake shared database ----------
+const DB = {
+  mode: 'owned', cap: 'granola',
+  log: [
+    ['09 Nov 18:42','lesson','Lesson with Jonas captured (31 min, Granola)'],
+    ['09 Nov 18:44','agent','Extracted 4 corrections, 6 new words from lesson'],
+    ['09 Nov 18:44','card','+ card "bin gegangen" (from lesson)'],
+    ['10 Nov 08:10','review','Reviewed 24 cards · 88% recalled'],
+    ['10 Nov 08:25','input','Story "Der verlorene Schlüssel" · 412 words · 9 looked up'],
+  ],
+  words: {
+    'Schlüssel':{g:'key',s:'learning',src:'story · 10 Nov',seen:5},
+    'verloren':{g:'lost',s:'learning',src:'lesson · 9 Nov',seen:3},
+    'gestern':{g:'yesterday',s:'known',src:'deck',seen:21},
+    'Wohnung':{g:'flat, apartment',s:'learning',src:'lesson · 9 Nov',seen:4},
+    'Nachbarin':{g:'neighbour (f.)',s:'new',src:'',seen:0},
+    'klingeln':{g:'to ring (a bell)',s:'new',src:'',seen:0},
+    'Hausmeister':{g:'caretaker, janitor',s:'new',src:'',seen:0},
+    'leider':{g:'unfortunately',s:'known',src:'deck',seen:30},
+    'überall':{g:'everywhere',s:'learning',src:'podcast · 7 Nov',seen:2},
+    'gesucht':{g:'searched (past participle)',s:'learning',src:'story · 8 Nov',seen:3},
+    'Jacke':{g:'jacket',s:'new',src:'',seen:0},
+    'Tasche':{g:'pocket, bag',s:'learning',src:'deck',seen:4},
+    'endlich':{g:'finally',s:'new',src:'',seen:0},
+  },
+  cards: [
+    {front:'Ich ___ gestern ins Kino gegangen.', back:'bin', why:'From lesson with Jonas, 9 Nov — you said "habe gegangen". Motion verbs take sein.'},
+    {front:'der ___ (key)', back:'Schlüssel', why:'From story "Der verlorene Schlüssel", 10 Nov — you looked it up twice.'},
+    {front:'Ich wohne seit zwei Jahren in ___ Wohnung.', back:'dieser', why:'From AI conversation, 9 Nov — dative after "in" when there is no movement.'},
+    {front:'___, ich habe keine Zeit. (unfortunately)', back:'Leider', why:'Top-1000 word, from frequency deck.'},
+    {front:'Ü in "Tür" — say it, then compare', back:'🔊 /tyːɐ̯/ — round lips as for "u", tongue as for "i"', why:'Pronunciation drill. Lesson transcript showed "Tier" heard instead of "Tür" twice.'},
+  ],
+  cardIdx:0, revealed:false, reviewed:0,
+  plan:[
+    {t:'Review 5 cards',v:'review',m:'4 min',done:false},
+    {t:'Listen: "Der verlorene Schlüssel" part 2',v:'input',m:'12 min',done:false},
+    {t:'Speak: tell the AI about your weekend',v:'speak',m:'10 min',done:false},
+    {t:'Tutor lesson (optional)',v:'tutor',m:'30 min',done:false},
+  ],
+};
+const $ = s => document.querySelector(s);
+const main = $('#main');
+function now(){const d=new Date();return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toTimeString().slice(0,5)}
+function log(kind,msg){DB.log.push([now(),kind,msg])}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600)}
+
+// ---------- views ----------
+const undone=new Set(); let selWord=null, view='today', inputTab='made', openItem=null, recording=false, chatStep=0, openLesson=null, playing=false, curPara=0;
+const V = {};
+
+V.today = () => {
+  const due = DB.cards.length - DB.cardIdx;
+  return `
+  <h1>Guten Morgen</h1>
+  <p class="sub">Day 23 · about 31 hours practised · estimate to conversational (B1): ~520 hours to go</p>
+  <div class="grid">
+    <div class="card"><h3>Today's plan</h3>
+      <ul class="feed plan">${DB.plan.map((p,i)=>`<li><span class="${p.done?'done':''}">${p.t} <span class="muted small">· ${p.m}</span></span><button class="btn small" data-go="${p.v}" data-plan="${i}">${p.v==='tutor'?'Find tutor':'Start'}</button></li>`).join('')}</ul>
+    </div>
+    <div class="card"><h3>Since yesterday, in the background</h3>
+      <ul class="feed">
+        <li>Lesson with <b>Jonas</b> (31 min) was captured by ${DB.cap==='granola'?'Granola':'the built-in recorder'}. <span class="muted">4 corrections and 6 new words became cards.</span> <a href="#" data-go="lessons">See lesson</a></li>
+        <li>Today's story uses 9 words from that lesson so you meet them again in context.</li>
+        <li>You keep using <b>haben</b> with motion verbs (3× in lesson, 2× with AI). The AI conversation today will steer you into past-tense travel talk.</li>
+        ${DB.mode==='ext'?'<li><span class="tag ext">extension</span> 22 min of <b>Easy German</b> on YouTube last night. 14 words you hovered became cards.</li>':''}
+      </ul>
+    </div>
+    <div class="card"><h3>Due now</h3>
+      <div class="big">${due}</div><div class="muted small">cards · from lessons ${2}, stories ${1}, AI talks ${1}, deck ${1}</div>
+      <div style="margin-top:10px"><button class="btn primary" data-go="review">Review <kbd>2</kbd></button></div>
+    </div>
+  </div>`;
+};
+
+V.review = () => {
+  if (DB.cardIdx >= DB.cards.length) return `<div class="rev"><h1>All done for now</h1><p class="sub">${DB.reviewed} cards reviewed. Next ones are due this evening.</p><button class="btn primary" data-go="input">Go listen <kbd>3</kbd></button></div>`;
+  const c = DB.cards[DB.cardIdx];
+  const front = c.front.replace('___','<span class="blank">&nbsp;</span>');
+  return `<div class="rev">
+    <div class="muted small">Card ${DB.cardIdx+1} of ${DB.cards.length}</div>
+    <div class="progressbar"><div style="width:${DB.cardIdx/DB.cards.length*100}%"></div></div>
+    <div class="front">${front}</div>
+    <div class="back">${DB.revealed?c.back:''}</div>
+    ${DB.revealed?`<p class="muted small">${c.why}</p>
+      <div class="grades">
+        <button class="btn" data-grade="1">Again <kbd>1</kbd></button>
+        <button class="btn" data-grade="2">Hard <kbd>2</kbd></button>
+        <button class="btn primary" data-grade="3">Good <kbd>3</kbd></button>
+        <button class="btn" data-grade="4">Easy <kbd>4</kbd></button>
+      </div><p class="muted small">Space also counts as Good</p>`
+    :`<button class="btn primary" data-reveal>Show answer <kbd>Space</kbd></button><p class="muted small">Say it out loud first</p>`}
+  </div>`;
+};
+
+const ITEMS = {
+  made:[
+    {id:'story',icon:'🔑',t:'Der verlorene Schlüssel · part 2',m:'Story written for you · 4 min audio · 96% known words',kind:'audio'},
+    {id:'dlg',icon:'☕',t:'Im Café bestellen',m:'Dialogue · uses 6 words from Jonas lesson · 3 min',kind:'audio'},
+  ],
+  pod:[
+    {id:'pod1',icon:'🎙️',t:'Slow German #212 · Der Hausmeister',m:'Podcast via RSS · transcribed in app · 88% known',kind:'audio'},
+    {id:'pod2',icon:'📰',t:'nachrichtenleicht · Wetter im November',m:'Article · easy news · 91% known',kind:'audio'},
+  ],
+  yt:[
+    {id:'yt1',icon:'▶️',t:'Super Easy German · Shopping in Berlin',m:'YouTube · opens in Chrome · extension tracks words',kind:'ext'},
+    {id:'yt2',icon:'▶️',t:'Nicos Weg A1 · Folge 14',m:'YouTube · 82% known',kind:'ext'},
+  ],
+  nf:[
+    {id:'nf1',icon:'🎬',t:'Dark · S1E1',m:'Netflix · opens in Chrome · 64% known — hard',kind:'ext'},
+    {id:'nf2',icon:'🎬',t:'How to Sell Drugs Online (Fast) · S1E1',m:'Netflix · 61% known — hard',kind:'ext'},
+  ],
+};
+const YT_SUBS = [
+  'Wo kaufst du am liebsten ein?',
+  'Meistens im Supermarkt, aber am Samstag gehe ich auf den Markt.',
+  'Da ist das Obst frischer und leider auch teurer.',
+  'Ich habe heute eine Jacke gesucht, aber nichts gefunden.',
+];
+const STORY = [
+  'Gestern habe ich meinen Schlüssel verloren.',
+  'Ich habe überall gesucht: in der Jacke, in der Tasche, in der Wohnung.',
+  'Leider war er nicht da. Dann hat die Nachbarin geklingelt.',
+  'Sie hatte den Schlüssel im Hausmeister-Büro gefunden. Endlich!',
+];
+function wordSpan(raw){
+  const clean = raw.replace(/[.,:!]/g,'');
+  let key = Object.keys(DB.words).find(k=>clean.toLowerCase()===k.toLowerCase() || clean.startsWith(k) || (k==='klingeln'&&clean==='geklingelt'));
+  if(!key) return raw;
+  const w = DB.words[key];
+  const cls = (w.s==='known'||w.s==='ignored')?'':w.s;
+  return `<span class="w ${cls}" data-word="${key}">${raw}</span>`;
+}
+V.input = () => {
+  if (openItem) return readerView();
+  const tabs = [['made','Made for you'],['pod','Podcasts & articles']];
+  if (DB.mode==='ext') tabs.push(['yt','YouTube'],['nf','Netflix']);
+  if (!tabs.find(t=>t[0]===inputTab)) inputTab='made';
+  return `<h1>Listen &amp; read</h1>
+  <p class="sub">${(inputTab==='yt'||inputTab==='nf')?'Shows what share of the words you already know, so you can pick something you can follow.':'Everything here is picked or written so you know ~95% of the words.'} Words you meet are logged automatically.</p>
+  <div class="tabs">${tabs.map(([k,l])=>`<button class="${k===inputTab?'on':''}" data-tab="${k}">${l}</button>`).join('')}</div>
+  ${(inputTab==='yt'||inputTab==='nf')?`<div class="note">These open in Chrome. The extension shows dual subtitles, lets you click words, and writes everything you watch and look up into the same database as the rest of the app. If Netflix or YouTube change their pages, this part can break; everything else keeps working.</div>`:''}
+  <div class="items">${ITEMS[inputTab].map(it=>`<div class="card item" data-open="${it.id}"><div class="thumb">${it.icon}</div><b>${it.t}</b><div class="muted small">${it.m}</div>${it.kind==='ext'?'<span class="tag ext" style="margin-top:6px">extension</span>':''}</div>`).join('')}</div>
+  ${inputTab==='made'?`<div class="card" style="margin-top:14px"><h3>Make something new</h3><div class="row"><button class="btn" data-gen="story">Story about my week</button><button class="btn" data-gen="dlg">Dialogue at the doctor's</button><button class="btn" data-gen="lesson">Replay yesterday's lesson topics</button></div></div>`:''}`;
+};
+function readerView(){
+  const all = Object.values(ITEMS).flat(); const it = all.find(i=>i.id===openItem);
+  const isExt = it.kind==='ext';
+  return `<div class="row" style="margin-bottom:10px"><button class="btn" data-back>← Library <kbd>Esc</kbd></button><b>${it.t}</b> ${isExt?'<span class="tag ext">extension · in Chrome</span>':''}</div>
+  <div class="reader"><div>
+    ${isExt?`<div class="video">▶ video plays here in Chrome — subtitles below are the extension overlay</div>`:
+    `<div class="player"><button class="btn primary" data-play>${playing?'❚❚ Pause':'▶ Play'} <kbd>Space</kbd></button><span class="muted small">Sentence ${curPara+1}/${STORY.length} · <kbd>←</kbd><kbd>→</kbd> previous / next · speed 0.9×</span></div>`}
+    <div class="legend small muted" style="margin-bottom:8px"><span style="background:var(--new)">new</span><span style="background:var(--learning)">learning</span>known words unmarked · click any word</div>
+    <div class="text">${(isExt?YT_SUBS:STORY).map((s,i)=>`<p class="${i===curPara?'cur':''}">${s.split(' ').map(wordSpan).join(' ')}</p>`).join('')}</div>
+  </div>
+  <div class="card gloss" id="gloss">${selWord?(()=>{const w=DB.words[selWord.k];return `<h3>${selWord.k}</h3><div style="font-size:18px">${w.g}</div><p class="muted small">${w.s==='ignored'?'You chose not to track this word.':selWord.wasNew?'New → added as a card automatically.':`First met: ${w.src} · seen ${w.seen}×`}</p><button class="btn small" data-say>🔊 Hear it</button> ${w.s==='ignored'?'<span class="muted small">Not tracked</span>':'<button class="btn small" data-untrack>Don\'t track this word</button>'}`})():`<h3>Click a word</h3><p class="muted small">You'll see the meaning and where you met it before. New words you click become cards automatically — no button needed.</p>`}</div>
+  </div>`;
+}
+
+const CHAT = [
+  {ai:'Hallo! Was hast du am Wochenende gemacht?'},
+  {me:'Am Samstag ich <span class="err">habe</span> nach Potsdam <span class="err">gefahrt</span>.', ai:'Fast! Zwei Kleinigkeiten — versuch es noch mal: „Am Samstag …"', fix:'Word order and one verb form. Try again before I tell you.'},
+  {me:'Am Samstag bin ich nach Potsdam gefahren.', ai:'Perfekt! 👏 Und was hast du in Potsdam gemacht?', fix:'Self-corrected ✓ — logged as a win for "sein + motion verbs"'},
+  {me:'Ich habe das Schloss gesehen. Es war sehr schön, aber leider war es kalt.', ai:'Schön! Welches Schloss — Sanssouci? Bist du mit dem Zug gefahren?'},
+];
+V.speak = () => {
+  const shown = CHAT.slice(0, chatStep+1);
+  return `<h1>Speak with AI</h1>
+  <p class="sub">Topic picked from your errors: past tense with travel. It waits for you to fix mistakes yourself before giving the answer.</p>
+  <div class="speak"><div>
+    <div class="chat card" id="chat">${shown.map(m=>`${m.me?`<div class="msg me">${m.me}</div>`:''}${m.ai?`<div class="msg ai">${m.ai}${m.fix?`<span class="fix">${m.fix}</span>`:''}</div>`:''}`).join('')}</div>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="mic ${recording?'rec':''}" id="mic">🎙</button>
+      <span class="muted small">${chatStep>=CHAT.length-1?'End of mock conversation. <a href="#" data-resetchat>Start over</a>':'Hold <kbd>Space</kbd> or click to talk, release to send'}</span>
+    </div>
+  </div>
+  <div class="card"><h3>Captured this session</h3>
+    <ul class="feed small">
+      ${chatStep>=1?'<li>Error: "habe … gefahren" → sein <span class="tag warn">repeat error</span></li><li>Error: word order after "Am Samstag"</li><li>Error: "gefahrt" → "gefahren"</li>':'<li class="muted">Nothing yet</li>'}
+      ${chatStep>=2?'<li>Self-correction ✓ <span class="tag acc">win</span></li>':''}
+      ${chatStep>=3?'<li>Used "leider" correctly → card pushed later</li><li>New word: Schloss → card</li>':''}
+    </ul>
+    <p class="muted small">Pronunciation: "schön" scored 71/100 — ö drifting to e. Drill added.</p>
+  </div></div>`;
+};
+
+const LESSON_T = [
+  ['Jonas','Und was hast du gestern gemacht?'],
+  ['Du','Gestern ich habe ins Kino gegangen.'],
+  ['Jonas','Gestern <b>bin</b> ich ins Kino gegangen — mit „gehen" nehmen wir „sein".'],
+  ['Du','Ah, gestern bin ich ins Kino gegangen. Der Film war… wie sagt man „boring"?'],
+  ['Jonas','Langweilig.'],
+  ['Du','Der Film war langweilig, aber die Popcorn war gut.'],
+  ['Jonas','<b>Das</b> Popcorn. 😊'],
+];
+V.lessons = () => {
+  if (openLesson) return `<div class="row" style="margin-bottom:10px"><button class="btn" data-back>← Lessons <kbd>Esc</kbd></button><b>Jonas K. · 9 Nov · 31 min</b> <span class="tag">${DB.cap==='granola'?'captured by Granola':'built-in recorder'}</span></div>
+  <div class="lesson"><div class="card"><h3>Transcript</h3>
+    <p class="muted small">"Du" is your microphone, "Jonas" is the call audio, so speakers are separated without guessing.</p>
+    ${LESSON_T.map(([s,t])=>`<div class="tline ${s==='Du'?'me':''}"><b class="who">${s}</b>${t}</div>`).join('')}
+    <p class="muted small" style="margin-top:10px">… 24 more minutes</p></div>
+  <div class="card"><h3>Added automatically</h3>
+    <ul class="feed extract small">
+      <li style="${undone.has('Card: "bin … gegangen" (sein + motion)')?'opacity:.4':''}"><span>Card: "bin … gegangen" (sein + motion)</span><button class="undo" data-undo="Card: &quot;bin … gegangen&quot; (sein + motion)">${undone.has('Card: "bin … gegangen" (sein + motion)')?'undone':'undo'}</button></li>
+      <li style="${undone.has('Card: das Popcorn (gender)')?'opacity:.4':''}"><span>Card: das Popcorn (gender)</span><button class="undo" data-undo="Card: das Popcorn (gender)">${undone.has('Card: das Popcorn (gender)')?'undone':'undo'}</button></li>
+      <li style="${undone.has('Word: langweilig')?'opacity:.4':''}"><span>Word: langweilig</span><button class="undo" data-undo="Word: langweilig">${undone.has('Word: langweilig')?'undone':'undo'}</button></li>
+      <li style="${undone.has('Word: verloren, Wohnung, Nachbarin +3')?'opacity:.4':''}"><span>Word: verloren, Wohnung, Nachbarin +3</span><button class="undo" data-undo="Word: verloren, Wohnung, Nachbarin +3">${undone.has('Word: verloren, Wohnung, Nachbarin +3')?'undone':'undo'}</button></li>
+      <li style="${undone.has('Pronunciation: Tür/Tier confusion ×2')?'opacity:.4':''}"><span>Pronunciation: Tür/Tier confusion ×2</span><button class="undo" data-undo="Pronunciation: Tür/Tier confusion ×2">${undone.has('Pronunciation: Tür/Tier confusion ×2')?'undone':'undo'}</button></li>
+    </ul>
+    <p class="muted small">Jonas asked about your weekend plans for next time. The AI will practise future tense with you before then.</p>
+  </div></div>`;
+  return `<h1>Tutor lessons</h1>
+  <p class="sub">Lessons on italki are captured by ${DB.cap==='granola'?'Granola (mic and call audio kept apart)':'the built-in recorder'}. Nothing to copy: the transcript shows up here a few minutes after the call ends.</p>
+  <div class="row" style="margin-bottom:14px"><button class="btn primary" data-tutor>Find a tutor now <kbd>T</kbd></button><span class="muted small">3 German tutors free right now</span></div>
+  <div class="card"><table>
+    <tr><th>Date</th><th>Tutor</th><th>Length</th><th>Added</th><th></th></tr>
+    <tr><td>9 Nov</td><td>Jonas K.</td><td>31 min</td><td>4 corrections · 6 words</td><td><button class="btn" data-lesson="1">Open</button></td></tr>
+    <tr><td>5 Nov</td><td>Jonas K.</td><td>30 min</td><td>6 corrections · 9 words</td><td><button class="btn" data-lesson="1">Open</button></td></tr>
+    <tr><td>2 Nov</td><td>Miriam S.</td><td>29 min</td><td>3 corrections · 11 words</td><td><button class="btn" data-lesson="1">Open</button></td></tr>
+  </table></div>`;
+};
+
+V.me = () => `<h1>What I know</h1>
+  <p class="sub">One database behind every screen. Each surface writes events; the background agent reads all of them.</p>
+  <div class="grid">
+    <div class="card"><h3>Words</h3><div class="big">612</div><div class="muted small">known · 148 learning · 95% of everyday speech needs ~2,500</div><div class="progressbar"><div style="width:24%"></div></div></div>
+    <div class="card"><h3>Recurring errors</h3><table>
+      <tr><td>haben instead of sein with motion verbs</td><td><span class="tag warn">7×</span></td></tr>
+      <tr><td>Word order after time phrase (verb second)</td><td><span class="tag warn">5×</span></td></tr>
+      <tr><td>Noun gender (der/die/das)</td><td><span class="tag warn">9×</span></td></tr>
+      <tr><td>ü / ö pronunciation</td><td><span class="tag warn">4×</span></td></tr></table></div>
+    <div class="card"><h3>Where this week's practice came from</h3><table>
+      <tr><td>Reviews</td><td>1 h 05</td></tr><tr><td>Stories &amp; podcasts</td><td>1 h 40</td></tr>
+      ${DB.mode==='ext'?'<tr><td>YouTube / Netflix <span class="tag ext">ext</span></td><td>2 h 10</td></tr>':''}
+      <tr><td>AI conversation</td><td>0 h 50</td></tr><tr><td>Tutor lessons</td><td>1 h 01</td></tr></table></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Event log (live — try other screens, then come back)</h3>
+    <div class="log">${DB.log.slice().reverse().map(([t,k,m])=>`<div><span class="muted">${t}</span> <b>${k}</b> ${m}</div>`).join('')}</div></div>`;
+
+// ---------- render + events ----------
+function render(){
+  main.innerHTML = V[view]();
+  document.querySelectorAll('nav button[data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
+  const c=$('#chat'); if(c) c.scrollTop=c.scrollHeight;
+}
+function go(v){ if(v==='tutor'){openTutor();return} view=v; openItem=null; openLesson=null; render(); }
+function openTutor(){ $('#capName').textContent = DB.cap==='granola'?'Granola':'the built-in recorder'; $('#tutorOverlay').classList.add('show'); }
+function closeTutor(){ $('#tutorOverlay').classList.remove('show'); }
+function grade(g){
+  const c=DB.cards[DB.cardIdx]; const names={1:'Again',2:'Hard',3:'Good',4:'Easy'};
+  log('review',`"${c.back}" graded ${names[g]}`); DB.cardIdx++; DB.reviewed++; DB.revealed=false;
+  if(DB.cardIdx>=DB.cards.length) DB.plan[0].done=true;
+  render();
+}
+function speakStep(){
+  if(chatStep>=CHAT.length-1) return;
+  chatStep++; const m=CHAT[chatStep];
+  log('speak',`You said: "${m.me.replace(/<[^>]+>/g,'')}"`);
+  if(chatStep===1) log('card','+ card "bin gefahren" (from AI talk)');
+  if(chatStep===3){DB.plan[2].done=true; log('card','+ card "das Schloss" (from AI talk)')}
+  render();
+}
+document.addEventListener('click', e=>{
+  const t=e.target.closest('[data-view],[data-go],[data-reveal],[data-grade],[data-tab],[data-open],[data-back],[data-word],[data-play],[data-gen],[data-lesson],[data-undo],[data-tutor],[data-book],[data-say],[data-untrack],#closeTutor,#mic,[data-resetchat]');
+  if(!t) { if(e.target.id==='tutorOverlay') closeTutor(); return; }
+  if(t.tagName==='A') e.preventDefault();
+  const d=t.dataset;
+  if(d.view) go(d.view);
+  else if(d.go){ go(d.go); }
+  else if('reveal' in d){ DB.revealed=true; render(); }
+  else if(d.grade) grade(+d.grade);
+  else if(d.tab){ inputTab=d.tab; render(); }
+  else if(d.open){ openItem=d.open; curPara=0; selWord=null; playing=false;
+    const it=Object.values(ITEMS).flat().find(i=>i.id===d.open);
+    log('input', `Opened "${it.t}"${it.kind==='ext'?' (in Chrome via extension)':''}`); render(); }
+  else if('back' in d){ openItem=null; openLesson=null; render(); }
+  else if(d.word){ const w=DB.words[d.word];
+    const wasNew = w.s==='new'; if(wasNew){w.s='learning'; w.src='this text · just now'; log('card',`+ card "${d.word}" (clicked while reading)`)}
+    w.seen++; selWord={k:d.word,wasNew}; render(); }
+  else if('untrack' in d){ DB.words[selWord.k].s='ignored'; log('agent',`Stopped tracking "${selWord.k}"`); toast('Removed. The agent will stop tracking it.'); render(); }
+  else if('say' in d){ toast('🔊 plays the word (mock)'); }
+  else if('play' in d){ playing=!playing; if(playing){DB.plan[1].done = DB.plan[1].done || false} render(); }
+  else if(d.gen){ toast('Writing a story at your level with words due for review… (mock)'); log('input',`Generated new ${d.gen}`); }
+  else if(d.lesson){ openLesson=d.lesson; render(); }
+  else if('undo' in d){ undone.add(t.dataset.undo); toast('Removed from your cards.'); log('agent',`Undid extracted item: ${t.dataset.undo}`); render(); }
+  else if('tutor' in d) openTutor();
+  else if(d.book){ closeTutor(); toast(`Opening italki classroom with ${d.book}… ${DB.cap==='granola'?'Granola':'Recorder'} starts capturing.`); log('lesson',`Started instant lesson with ${d.book}`); DB.plan[3].done=true; }
+  else if(t.id==='closeTutor') closeTutor();
+  else if(t.id==='mic'){ speakStep(); }
+  else if('resetchat' in d){ chatStep=0; render(); }
+});
+document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('change',()=>{r.blur(); DB.mode=r.value; log('settings', r.value==='ext'?'Enabled YouTube & Netflix extension':'App content only'); if(view==='input'){openItem=null} render(); toast(r.value==='ext'?'YouTube and Netflix tabs added to Listen & read':'Showing app content only');}));
+document.querySelectorAll('input[name=cap]').forEach(r=>r.addEventListener('change',()=>{r.blur(); DB.cap=r.value; log('settings','Lesson capture: '+r.value); render(); toast('Lesson capture: '+(r.value==='granola'?'Granola':'built-in recorder'));}));
+
+document.addEventListener('keydown', e=>{
+  if(e.target.matches('input[type=text],textarea')) return;
+  if($('#tutorOverlay').classList.contains('show')){ if(e.key==='Escape') closeTutor(); return; }
+  if(e.key==='Escape' && (openItem||openLesson)){ openItem=null; openLesson=null; render(); return; }
+  if(view==='review' && DB.cardIdx<DB.cards.length){
+    if(e.code==='Space'){ e.preventDefault(); if(!DB.revealed){DB.revealed=true; render()} else grade(3); return; }
+    if(['1','2','3','4'].includes(e.key)){ if(DB.revealed) grade(+e.key); return; }
+  }
+  if(view==='input' && openItem){
+    if(e.code==='Space'){ e.preventDefault(); playing=!playing; render(); return; }
+    if(e.key==='ArrowRight'){ curPara=Math.min(STORY.length-1,curPara+1); if(curPara===STORY.length-1){DB.plan[1].done=true; log('input','Finished story · 4 new words met')} render(); return; }
+    if(e.key==='ArrowLeft'){ curPara=Math.max(0,curPara-1); render(); return; }
+  }
+  if(view==='speak' && e.code==='Space'){ e.preventDefault(); if(!e.repeat && !recording){recording=true; render()} return; }
+  if(view==='lessons' && (e.key==='t'||e.key==='T')){ openTutor(); return; }
+  const map={'1':'today','2':'review','3':'input','4':'speak','5':'lessons','6':'me'};
+  if(map[e.key]) go(map[e.key]);
+});
+document.addEventListener('keyup', e=>{
+  if(view==='speak' && e.code==='Space' && recording){ recording=false; speakStep(); }
+});
+render();
+</script>
+</body>
+</html>
