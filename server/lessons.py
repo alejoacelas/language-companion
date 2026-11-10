@@ -141,12 +141,18 @@ def analyse(sid: int) -> dict:
     meta = json.loads(sess["meta"] or "{}")
     meta.update({k: data.get(k) for k in ("tutor", "duration_min", "summary", "pronunciation", "tutor_requests", "next_time")})
     added_cards, added_words = 0, 0
+    made: dict[tuple, int] = {}  # one card per sentence, even when it has several mistakes
     for m in data.get("mistakes", []):
         card = None
         if m.get("right"):
-            card = srs.add("correction", m.get("wrong", ""), m["right"],
-                           f'{m.get("category")}: {m.get("explanation", "")}', "lesson", str(sid))
-            added_cards += 1
+            key = (m.get("wrong", ""), m["right"])
+            if key in made:
+                card = made[key]
+                db.x("UPDATE cards SET note = note || ? WHERE id=?", (f'; {m.get("category")}: {m.get("explanation", "")}', card))
+            else:
+                card = made[key] = srs.add("correction", m.get("wrong", ""), m["right"],
+                                           f'{m.get("category")}: {m.get("explanation", "")}', "lesson", str(sid))
+                added_cards += 1
         db.x("INSERT INTO errors (ts, source, source_ref, category, wrong, right, explanation, self_corrected, card_id) "
              "VALUES (?,?,?,?,?,?,?,?,?)",
              (sess["started"], "lesson", str(sid), m.get("category", "other"), m.get("wrong"), m.get("right"),

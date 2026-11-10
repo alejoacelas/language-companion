@@ -482,7 +482,7 @@ views.tutor = async () => {
   const L = await api('/api/lessons');
   main.innerHTML = `<h1>Tutor</h1><p class="sub">Book a lesson on italki. Granola records it, and its mistakes and new words come back here as cards.</p>
   <div class="grid" style="margin-bottom:16px">
-    <div class="card"><h2>Find a tutor now</h2><p class="muted small">Opens italki's German teachers who are available for an instant lesson.</p>
+    <div class="card"><h2>Find a tutor now</h2><p class="muted small">Opens italki's German teachers. Use the Lesson time filter to pick someone free today.</p>
       <button class="btn primary" id="find">Find a German tutor <kbd>T</kbd></button></div>
     <div class="card"><h2>Brief for your tutor</h2><p class="muted small">Written from your progress. Paste it in the italki chat before the lesson.</p>
       <div class="row"><input type="text" id="tname" list="tutors" placeholder="Tutor's name" style="flex:1"><datalist id="tutors">${L.tutors.map(t => `<option value="${esc(t)}">`).join('')}</datalist><button class="btn" id="mk">Write brief</button></div></div>
@@ -513,7 +513,12 @@ async function briefModal(name) {
     modal(`<h2>Brief for ${esc(name)}</h2><p class="muted small">Edit anything, then copy it into the italki chat.</p>
       <textarea class="brief" id="bt">${esc(r.text)}</textarea>
       <div class="row" style="margin-top:12px"><span class="spacer"></span><button class="btn ghost" id="bc">Close <kbd>Esc</kbd></button><button class="btn primary" id="bcp">Copy <kbd>⌘↵</kbd></button></div>`);
-    const copy = async () => { await navigator.clipboard.writeText($('#bt').value); closeModal(); toast('Copied. Paste it in the italki chat.'); };
+    const copy = async () => {
+      // the clipboard API only exists on localhost/https; select-and-copy covers other addresses
+      if (navigator.clipboard) await navigator.clipboard.writeText($('#bt').value);
+      else { $('#bt').select(); document.execCommand('copy'); }
+      closeModal(); toast('Copied. Paste it in the italki chat.');
+    };
     $('#bcp').onclick = copy; $('#bc').onclick = closeModal;
     $('#bt').onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); copy(); } };
     $('#bt').focus();
