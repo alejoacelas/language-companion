@@ -9,7 +9,7 @@ import simplemma
 
 from . import db, llm, srs
 
-TOKEN = re.compile(r"[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*")
+TOKEN = re.compile(r"[A-Za-zÄÖÜäöüß]+(?:[-'’][A-Za-zÄÖÜäöüß]+)*")
 
 
 def tokens(text: str) -> list[str]:

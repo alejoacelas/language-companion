@@ -156,8 +156,9 @@ views.review = async () => {
       <div class="flash">
         <div class="kind">${kindLabel[c.kind] || c.kind}</div>
         <div class="front ${c.kind === 'correction' ? 'wrong' : ''}">${esc(c.front)}</div>
+        ${c.kind === 'word' ? '<div><button class="btn ghost small" id="hearc">🔊 Hear it <kbd>R</kbd></button></div>' : ''}
         ${revealed ? `<div class="back">${esc(backMain)}${ex.length ? `<span class="ex">${esc(ex.join(' '))}</span>` : ''}</div>
-        <div class="note">${esc(c.note || '')}</div>` : `<div class="note">${c.kind === 'word' ? 'What does it mean? Say it out loud.' : c.kind === 'correction' ? 'Say the correct version out loud.' : 'Say it out loud.'}</div>`}
+        <div class="note">${esc(c.note || '')}${c.source ? ` <span class="tag">${esc(c.source)}</span>` : ''}</div>` : `<div class="note">${c.kind === 'word' ? 'What does it mean? Say it out loud.' : c.kind === 'correction' ? 'Say the correct version out loud.' : 'Say it out loud.'}</div>`}
       </div>
       ${revealed ? `<div class="grades">
         <button class="btn" data-g="1">Again <kbd>1</kbd></button><button class="btn" data-g="2">Hard <kbd>2</kbd></button>
@@ -166,6 +167,7 @@ views.review = async () => {
         : `<div style="margin-top:18px"><button class="btn primary big" id="show">Show answer <kbd>Space</kbd></button></div>`}
     </div>`;
     $('#show')?.addEventListener('click', reveal);
+    $('#hearc')?.addEventListener('click', speakCard);
     $$('[data-g]').forEach(b => b.onclick = () => grade(+b.dataset.g));
     $('#susp').onclick = async () => { await post(`/api/cards/${c.id}/suspend`); toast('Card removed'); i++; revealed = false; render(); };
   }
@@ -278,16 +280,16 @@ async function openReader(id) {
   const started = Date.now();
   const isPod = c.kind === 'podcast';
   // split the raw text into words and the bits between them, escaping each piece
-  const wrapWords = text => text.split(/([A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*)/).map((part, k) => {
+  const wrapWords = text => text.split(/([A-Za-zÄÖÜäöüß]+(?:[-'’][A-Za-zÄÖÜäöüß]+)*)/).map((part, k) => {
     if (k % 2 === 0) return esc(part);
     const st = c.tokens[part]?.status;
     return `<span class="w ${st === 'new' || st === 'learning' ? st : ''}" data-w="${esc(part)}">${esc(part)}</span>`;
   }).join('');
-  main.innerHTML = `<div class="player">
-      <button class="btn ghost" id="back">← Library <kbd>Esc</kbd></button>
-      <h2 style="margin:0;flex:1">${esc(c.title)}</h2>
-      <span class="tag">${Math.round(c.known_share * 100)}% familiar</span></div>
-    <div class="player" style="top:56px">
+  main.innerHTML = `<div class="reader-head">
+      <button class="btn ghost" id="back">← Library</button>
+      <h1 style="margin:0">${esc(c.title)}</h1>
+      <div class="muted small">${c.sentences.length} sentences · ${Math.round(c.known_share * 100)}% of the words are familiar</div></div>
+    <div class="player">
       <button class="btn primary" id="pp">▶ Play <kbd>Space</kbd></button>
       <button class="btn ghost" id="prev">← <span class="small">previous</span></button><button class="btn ghost" id="nxt"><span class="small">next</span> →</button>
       <button class="btn ghost" id="tr">Translation <kbd>T</kbd></button>
@@ -391,12 +393,16 @@ views.speak = () => {
   <div class="row"><input type="text" id="topic" placeholder="Anything, or leave empty and it picks from today's words" style="flex:1"><button class="btn primary" id="go">Start <kbd>↵</kbd></button></div>
   <p class="muted small" style="margin:12px 0 0">Hold <kbd>Space</kbd> to talk and let go to send. You can also type.</p></div>`;
   const start = async () => {
+    if ($('#go').disabled) return;
     $('#go').disabled = true; $('#go').innerHTML = '<span class="spin"></span>';
-    try { const r = await post('/api/speak/start', { topic: $('#topic').value }); conversation(r); }
+    try { const r = await post('/api/speak/start', { topic: $('#topic').value }); if (cleanup) { cleanup(); cleanup = null; } conversation(r); }
     catch (e) { toast('Could not start: ' + e.message); $('#go').disabled = false; $('#go').textContent = 'Start'; }
   };
   $('#go').onclick = start; $('#topic').onkeydown = e => { if (e.key === 'Enter') start(); };
-  $('#topic').focus();
+  // Enter starts from anywhere on this screen; number keys keep switching screens
+  const key = e => { if (e.key === 'Enter' && !e.target.matches('input,textarea')) start(); };
+  document.addEventListener('keydown', key);
+  cleanup = () => document.removeEventListener('keydown', key);
 };
 
 function conversation(first) {
@@ -419,7 +425,7 @@ function conversation(first) {
     chat.appendChild(d); chat.scrollTop = chat.scrollHeight; return d;
   }
   function renderCaught() {
-    $('#caught').innerHTML = caught.length ? '<ul class="feed">' + caught.map(c => `<li>${c}</li>`).join('') + '</ul>' : '<p class="muted small" style="margin:0">Nothing yet.</p>';
+    $('#caught').innerHTML = caught.length ? '<ul class="feed caught">' + caught.map(c => `<li>${c}</li>`).join('') + '</ul>' : '<p class="muted small" style="margin:0">Nothing yet.</p>';
   }
   addMsg('ai', first.reply, { en: first.reply_en, audio: first.audio });
   play(first.audio);
@@ -435,10 +441,10 @@ function conversation(first) {
       thinking.remove();
       const m = r.mistake;
       let fix = '';
-      if (m && m.status === 'prompted') { fix = 'Your turn: say it again, fixed'; caught.push(`<b>Mistake:</b> ${esc(m.wrong)} <span class="tag warm">${esc(m.category)}</span>`); }
-      if (m && m.status === 'self_corrected') { fix = 'You fixed it ✓'; caught.push(`<b>Fixed it yourself:</b> ${esc(m.right)} <span class="tag acc">win</span>`); }
-      if (m && m.status === 'corrected_by_ai') { fix = `Correct: ${m.right}`; caught.push(`<b>Card added:</b> ${esc(m.right)}`); }
-      (r.english_words || []).forEach(w => caught.push(`<b>Needed a word:</b> ${esc(w)}`));
+      if (m && m.status === 'prompted') { fix = 'Your turn: say it again, fixed'; caught.push(`<span class="tag warm">${esc(m.category)}</span><div>${esc(m.wrong)}</div>`); }
+      if (m && m.status === 'self_corrected') { fix = 'You fixed it ✓'; caught.push(`<span class="tag acc">Fixed it yourself</span><div>${esc(m.right)}</div>`); }
+      if (m && m.status === 'corrected_by_ai') { fix = `Correct: ${m.right}`; caught.push(`<span class="tag">New card</span><div>${esc(m.right)}</div>`); }
+      (r.english_words || []).forEach(w => caught.push(`<span class="tag">Needed a word</span><div>${esc(w)}</div>`));
       renderCaught();
       if (m && m.status === 'corrected_by_ai' && m.explanation) fix += ` · ${m.explanation}`;
       addMsg('ai', r.reply, { en: r.reply_en, fix, audio: r.audio });

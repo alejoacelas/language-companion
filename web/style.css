@@ -113,6 +113,8 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(-
 .meter{height:4px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:auto}
 .meter div{height:100%;background:var(--accent)}
 .reader{display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start}
+.reader-head{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:6px}
+.reader-head .btn{margin-left:-14px}
 .player{position:sticky;top:0;z-index:2;background:var(--bg);padding:10px 0 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .text{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 14px;box-shadow:var(--shadow)}
 .sent{padding:8px 14px;border-radius:10px;cursor:pointer;transition:background .2s}
@@ -126,7 +128,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(-
 .w.learning{background:var(--learning)}
 .w:hover{outline:2px solid var(--accent)}
 .w.sel{outline:2px solid var(--accent);background:var(--accent-soft)}
-.gloss{position:sticky;top:130px}
+.gloss{position:sticky;top:80px}
 .gloss .lem{font:600 26px var(--serif)}
 .gloss .lem .art{font-size:17px;color:var(--muted);font-weight:400;margin-right:4px}
 .gloss .mean{font-size:17px;margin:6px 0}
@@ -191,3 +193,5 @@ tr.click{cursor:pointer} tr.click:hover td{background:#faf8f3}
   .reader,.speak{grid-template-columns:1fr} .gloss{position:static}
   .stats{margin-left:0}
 }
+
+.feed.caught li{flex-direction:column;align-items:flex-start;gap:4px}
