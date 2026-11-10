@@ -1,1 +1,7 @@
 .env
+.env.*
+!.env.tpl
+data/
+__pycache__/
+.venv/
+extension/*.zip
