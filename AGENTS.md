@@ -1,5 +1,6 @@
 # Agent notes
 
+Tags: languages, german, learning-app
 ## Credentials
 
 `.env` is built from `.env.tpl` with `op --account my.1password.com inject -i .env.tpl -o .env -f`.
